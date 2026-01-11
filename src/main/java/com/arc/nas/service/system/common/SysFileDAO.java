@@ -27,7 +27,7 @@ public interface SysFileDAO {
 
     boolean updateAllByCodes(List<SysFile> records);
 
-    int deleteById(Long id);
+    boolean deleteById(Long id);
 
     int deleteByIds(List<Long> ids);
 

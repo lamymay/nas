@@ -89,7 +89,7 @@ public class MediaResourceImpl implements MediaResource {
 
     @Override
     public int deleteAll(String... records) {
-        if(records==null||records.length==0) return 0;
+        if (records == null || records.length == 0) return 0;
         // 直接转为 List，一步到位
         return mediaFileResourceDAO.deleteByPaths(Arrays.asList(records));
     }

@@ -1,11 +1,9 @@
 package com.arc.nas.timer;
 
 import com.arc.nas.model.domain.app.media.MediaFileResource;
-import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.request.app.media.GenerateThumbnailConfig;
 import com.arc.nas.service.app.media.MediaResource;
 import com.arc.nas.service.app.media.MediaService;
-import com.arc.nas.service.app.media.impl.MediaServiceImpl;
 import com.arc.nas.service.system.common.SysFileDAO;
 import com.arc.util.JSON;
 import com.arc.util.StringTool;
@@ -14,12 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.arc.nas.service.app.media.impl.MediaServiceImpl.ignore;
 
 @Component
 public class ScheduleTask {
@@ -28,7 +23,8 @@ public class ScheduleTask {
     private final MediaResource mediaResource;
     private final SysFileDAO sysFileDAO;
     private final MediaService mediaService;
-
+    //SysFileFolder
+    long latest = System.currentTimeMillis();
 
     public ScheduleTask(MediaResource mediaResource,
                         SysFileDAO sysFileDAO,
@@ -38,11 +34,8 @@ public class ScheduleTask {
         this.mediaService = mediaService;
     }
 
-    //SysFileFolder
-    long latest = System.currentTimeMillis();
-
     // 方式 A：使用注解（最简单） fixedDelay: 上一次任务结束到下一次任务开始的间隔
-    @Scheduled(fixedDelay = 20000)
+    @Scheduled(fixedDelay = 2000)
     public void scanFolder() {
         long scanFolderT0 = System.currentTimeMillis();
 
@@ -62,13 +55,12 @@ public class ScheduleTask {
         // 4 generateThumbnails (by index db)
 
         try {
-
             GenerateThumbnailConfig config = new GenerateThumbnailConfig();
             config.setForce(false);
             config.setOverwrite(true);
             mediaService.generateThumbnails(config);
         } catch (Exception exception) {
-            log.error("处理缩略图异常!（建议检查环境ffmpeg是否配置ok）",exception);
+            log.error("处理缩略图异常!（建议检查环境ffmpeg是否配置ok）", exception);
         }
 
         latest = System.currentTimeMillis();
@@ -76,7 +68,6 @@ public class ScheduleTask {
 
     private Set<String> prepareMonitorFolders() {
 
-        long scanFolderT0 = System.currentTimeMillis();
         List<MediaFileResource> mediaFileResources = mediaResource.listAll();
         // 你的业务逻辑，如：watcherManager.upsertWatcher(...)
         Set<String> folders = new HashSet<>();
@@ -85,34 +76,34 @@ public class ScheduleTask {
                 folders.add(mediaFileResource.getPath());
             }
         }
-        long afterMediaResourceListAll = System.currentTimeMillis();
-        log.info("scanFolder  耗时统计 mediaResource.listAll {}", StringTool.displayTimeWithUnit(scanFolderT0, afterMediaResourceListAll));
+//        long afterMediaResourceListAll = System.currentTimeMillis();
+//        log.info("scanFolder  耗时统计 mediaResource.listAll {}", StringTool.displayTimeWithUnit(scanFolderT0, afterMediaResourceListAll));
+//
+//        List<SysFile> sysFiles = sysFileDAO.listAll();
+//        long afterFileDAOListAll = System.currentTimeMillis();
+//        log.info("scanFolder  耗时统计 sysFileDAO.listAll {}", StringTool.displayTimeWithUnit(afterFileDAOListAll, afterMediaResourceListAll));
 
-        List<SysFile> sysFiles = sysFileDAO.listAll();
-        long afterFileDAOListAll = System.currentTimeMillis();
-        log.info("scanFolder  耗时统计 sysFileDAO.listAll {}", StringTool.displayTimeWithUnit(afterFileDAOListAll, afterMediaResourceListAll));
-
-        Set<String> parentFolder = new HashSet<>();
-        if (sysFiles != null && !sysFiles.isEmpty()) {
-            for (SysFile sysFile : sysFiles) {
-                if (sysFile == null) continue;
-                if (MediaServiceImpl.nomedia.contains(sysFile.getOriginalName())
-                ||ignore.contains(sysFile.getOriginalName())) {
-                    continue;
-                }
-                File file = new File(sysFile.getPath());
-                if (file.isFile()) {
-                    parentFolder.add(file.getParent());
-                } else {
-                    parentFolder.add(file.getParent());
-                }
-            }
-        }
-        log.info("scanFolder  耗时统计 sysFileDAO.listAll 推导父级路径 {}", StringTool.displayTimeWithUnit(afterFileDAOListAll, System.currentTimeMillis()));
-
-        if (parentFolder.size() > 0) {
-            folders.addAll(parentFolder);
-        }
+//        Set<String> parentFolder = new HashSet<>();
+//        if (sysFiles != null && !sysFiles.isEmpty()) {
+//            for (SysFile sysFile : sysFiles) {
+//                if (sysFile == null) continue;
+//                if (MediaServiceImpl.nomedia.contains(sysFile.getOriginalName())
+//                ||ignore.contains(sysFile.getOriginalName())) {
+//                    continue;
+//                }
+//                File file = new File(sysFile.getPath());
+//                if (file.isFile()) {
+//                    parentFolder.add(file.getParent());
+//                } else {
+//                    parentFolder.add(file.getParent());
+//                }
+//            }
+//        }
+//        log.info("scanFolder  耗时统计 sysFileDAO.listAll 推导父级路径 {}", StringTool.displayTimeWithUnit(afterFileDAOListAll, System.currentTimeMillis()));
+//
+//        if (parentFolder.size() > 0) {
+//            folders.addAll(parentFolder);
+//        }
         return folders;
     }
 

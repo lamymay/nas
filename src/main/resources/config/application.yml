@@ -38,6 +38,7 @@ spring:
     mode: HTML5
     encoding: UTF-8
 
+
 #################################################################
 #     非Spring自动配置相关的配置(自定义配置) START
 #################################################################
@@ -45,37 +46,5 @@ spring:
 log:
   dir: ./log
 
-arc:
-  system:
-    initial: true
-  file:
-    upload:
-      path: ./data/upload
-  switch:
-    enableSettingSuccessNoticeAsync: true
-    enableAppContactSyncLog: true
-  app:
-    test:
-      #      url1: http://hello.com/?message=测试仅仅yaml中配置,java中无默认值&key=%s
-      #      url1:
-      url3: http://hello.com/?message=配置文件中注入的boolean-''-    -""-&key=%s
-  security:
-    user2: "user2YML配置"
 
-
-config:
-  program:
-    jobMaxProcessTimes: 1000
-    jobSingleProcessCostMillisecond: 59999
-
-
-
-# 自定义参数；说明 1、web.system.initial:是否在系统启动的时候初始化一些操作
-web:
-  upload:
-    file: /
-  system:
-    initial: true
-
-######非Spring自动配置相关的配置(自定义配置) END#################
 

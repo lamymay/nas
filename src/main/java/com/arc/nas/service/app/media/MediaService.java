@@ -2,7 +2,6 @@ package com.arc.nas.service.app.media;
 
 import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.dto.app.media.MediaPageDTO;
-import com.arc.nas.model.request.app.media.SysFilePageable;
 import com.arc.nas.model.request.app.media.*;
 
 public interface MediaService {

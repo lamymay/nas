@@ -15,6 +15,7 @@ public interface MediaResource {
     List<MediaFileResource> saveAll(String... records);
 
     int deleteAll();
+
     int deleteAll(String... records);
 
 }

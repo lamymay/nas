@@ -1,10 +1,10 @@
 package com.arc.nas.config.aop;
 
-import com.arc.util.StringTool;
 import com.arc.nas.model.enums.system.ProjectCodeEnum;
 import com.arc.nas.model.exception.BizException;
-import com.arc.util.file.FileUtil;
 import com.arc.util.JSON;
+import com.arc.util.StringTool;
+import com.arc.util.file.FileUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -59,8 +59,6 @@ public class AspectForController {
     }
 
 
-
-
     /**
      * 环绕通知
      * Around Advice 围绕连接点执行
@@ -105,8 +103,7 @@ public class AspectForController {
                 String name = signature.getName();
                 TreeMap<String, Object> stringStringMap = new TreeMap<>();
 
-                if (signature instanceof MethodSignature) {
-                    MethodSignature methodSignature = (MethodSignature) signature;
+                if (signature instanceof MethodSignature methodSignature) {
                     String[] parameterNames = methodSignature.getParameterNames();
                     Object[] args = proceedingJoinPoint.getArgs();
                     if (parameterNames == null) {
@@ -118,8 +115,7 @@ public class AspectForController {
                         Object data = args[i];
                         System.out.println("##########" + data.getClass());
 
-                        if (data instanceof MultipartFile) {
-                            MultipartFile file = (MultipartFile) data;
+                        if (data instanceof MultipartFile file) {
                             log.warn("### 是一个文件,{},size={}", file.getName(), FileUtil.formatFileLengthWithUnit(file.getSize()));
                             continue;
                         } else if (data instanceof HttpServletRequest || data instanceof HttpServletResponse) {
@@ -148,8 +144,7 @@ public class AspectForController {
     private Object convertExceptionDisplay(ProceedingJoinPoint proceedingJoinPoint, Throwable throwable) {
 
         Signature signature = proceedingJoinPoint.getSignature();
-        if (signature instanceof MethodSignature) {
-            MethodSignature methodSignature = (MethodSignature) signature;
+        if (signature instanceof MethodSignature methodSignature) {
             // 被切的方法
             Method method = methodSignature.getMethod();
             // 返回类型
@@ -171,7 +166,7 @@ public class AspectForController {
         private static final Logger log = LoggerFactory.getLogger(ErrorData.class);
 
         private String message;
-        private long serverResponseTime = System.currentTimeMillis();
+        private final long serverResponseTime = System.currentTimeMillis();
         private int code;
         private String details;
 
@@ -179,21 +174,19 @@ public class AspectForController {
         }
 
         public ErrorData(Throwable throwable) {
-            if (throwable instanceof BizException) {
-                BizException bizException = (BizException) throwable;
+            if (throwable instanceof BizException bizException) {
                 log.info("### throwable.getMessage()={}", throwable.getMessage());
                 log.info("### bizException.getMessage()={}", bizException.getMessage());
                 this.message = throwable.getMessage();
                 this.code = bizException.getKey();
 
-            } else if (throwable instanceof RuntimeException) {
-                RuntimeException runtimeException = (RuntimeException) throwable;
+            } else if (throwable instanceof RuntimeException runtimeException) {
                 log.info("### throwable.getMessage()={}", throwable.getMessage());
                 log.info("### runtimeException.getMessage()={}", runtimeException.getMessage());
                 this.message = throwable.getMessage();
 
             } else if (throwable instanceof Throwable) {
-                Throwable runtimeException = (Throwable) throwable;
+                Throwable runtimeException = throwable;
                 log.info("### throwable.getMessage()={}", throwable.getMessage());
                 log.info("### runtimeException.getMessage()={}", runtimeException.getMessage());
                 this.message = throwable.getMessage();

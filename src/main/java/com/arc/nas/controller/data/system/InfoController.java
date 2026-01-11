@@ -28,6 +28,37 @@ public class InfoController {
     @Value("${server.servlet.context-path:/}")
     private String contextPath;
 
+    public static String getIpAddress(HttpServletRequest request) {
+        try {
+            String ipAddress = request.getHeader("x-forwarded-for");
+            if (ipAddress == null || ipAddress.length() == 0 || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = request.getHeader("Proxy-Client-IP");
+            }
+            if (ipAddress == null || ipAddress.length() == 0 || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = request.getHeader("WL-Proxy-Client-IP");
+            }
+            if (ipAddress == null || ipAddress.length() == 0 || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = request.getRemoteAddr();
+                if (ipAddress.equals("127.0.0.1")) {
+                    // 根据网卡取本机配置的IP
+                    ipAddress = InetAddress.getLocalHost().getHostAddress();
+                }
+            }
+            // 对于通过多个代理的情况，第一个IP为客户端真实IP,多个IP按照','分割
+            if (ipAddress != null && ipAddress.length() > 15) { // "***.***.***.***".length()
+                // = 15
+                if (ipAddress.indexOf(",") > 0) {
+                    ipAddress = ipAddress.substring(0, ipAddress.indexOf(","));
+                }
+            }
+            return (ipAddress != null && !"".equals(ipAddress.trim())) ? ipAddress : "unknown";
+
+
+        } catch (Exception e) {
+            return "unknown";
+        }
+    }
+
     @RequestMapping("/info")
     @ResponseBody
     public Object info(HttpServletRequest request, HttpServletResponse response) {
@@ -95,39 +126,6 @@ public class InfoController {
         response.setHeader("doc/test", "" + System.currentTimeMillis());
         return map;
     }
-
-    public static String getIpAddress(HttpServletRequest request) {
-        try {
-            String ipAddress = request.getHeader("x-forwarded-for");
-            if (ipAddress == null || ipAddress.length() == 0 || "unknown".equalsIgnoreCase(ipAddress)) {
-                ipAddress = request.getHeader("Proxy-Client-IP");
-            }
-            if (ipAddress == null || ipAddress.length() == 0 || "unknown".equalsIgnoreCase(ipAddress)) {
-                ipAddress = request.getHeader("WL-Proxy-Client-IP");
-            }
-            if (ipAddress == null || ipAddress.length() == 0 || "unknown".equalsIgnoreCase(ipAddress)) {
-                ipAddress = request.getRemoteAddr();
-                if (ipAddress.equals("127.0.0.1")) {
-                    // 根据网卡取本机配置的IP
-                    ipAddress = InetAddress.getLocalHost().getHostAddress();
-                }
-            }
-            // 对于通过多个代理的情况，第一个IP为客户端真实IP,多个IP按照','分割
-            if (ipAddress != null && ipAddress.length() > 15) { // "***.***.***.***".length()
-                // = 15
-                if (ipAddress.indexOf(",") > 0) {
-                    ipAddress = ipAddress.substring(0, ipAddress.indexOf(","));
-                }
-            }
-            return (ipAddress != null && !"".equals(ipAddress.trim())) ? ipAddress : "unknown";
-
-
-        } catch (Exception e) {
-            return "unknown";
-        }
-    }
-
-
 
     @ResponseBody
     @GetMapping("/echo")

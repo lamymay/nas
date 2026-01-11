@@ -1,14 +1,14 @@
 package com.arc.nas.service.system.common.impl;
 
-import com.arc.util.*;
 import com.arc.nas.model.domain.system.common.SysFile;
-import com.arc.nas.model.request.app.media.SysFilePageable;
-import com.arc.nas.model.request.app.media.SysFileQuery;
 import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
+import com.arc.nas.model.request.app.media.SysFilePageable;
+import com.arc.nas.model.request.app.media.SysFileQuery;
 import com.arc.nas.service.system.common.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.Assert;
+import com.arc.util.JSON;
 import com.arc.util.file.FileSameCheckTool;
 import com.arc.util.file.FileUtil;
 import org.slf4j.Logger;
@@ -28,8 +28,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.arc.util.file.FileUtil.detectionTargetFileV3;
 import static com.arc.nas.init.ReadyResourceInit.getWriteableDirectory;
+import static com.arc.util.file.FileUtil.detectionTargetFileV3;
 
 @Service
 public class SysFileServiceImpl implements SysFileService {
@@ -41,6 +41,43 @@ public class SysFileServiceImpl implements SysFileService {
 
     public SysFileServiceImpl(SysFileDAO sysFileDAO) {
         this.sysFileDAO = sysFileDAO;
+    }
+
+    /**
+     * 判断字符串是不字
+     *
+     * @param str 字符串
+     * @return true=是数字/false=非数字
+     */
+    public static boolean isNumberString(String str) {
+        if (str == null || str.trim().length() == 0) {
+            return false;
+        }
+        Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
+        return pattern.matcher(str).matches();
+    }
+
+    /**
+     * BIO方式拷贝
+     *
+     * @param in  输入
+     * @param out 输出
+     * @return int int
+     * @throws IOException IOException
+     */
+    public static int copy(InputStream in, OutputStream out) throws IOException {
+        if (in == null) throw new RuntimeException("No InputStream specified");
+        if (out == null) throw new RuntimeException("No OutputStream specified");
+
+        int byteCount = 0;
+        byte[] buffer = new byte[4096];
+
+        int bytesRead;
+        for (boolean var4 = true; (bytesRead = in.read(buffer)) != -1; byteCount += bytesRead) {
+            out.write(buffer, 0, bytesRead);
+        }
+        out.flush();
+        return byteCount;
     }
 
     @Override
@@ -80,13 +117,12 @@ public class SysFileServiceImpl implements SysFileService {
         } else {
             boolean deleted = FileUtil.deleteFile(new File(existFileIndex.getPath()), true);
             if (deleted) {
-                return sysFileDAO.deleteById(id) != 0;
+                return sysFileDAO.deleteById(id);
             } else {
                 return false;
             }
         }
     }
-
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -99,7 +135,7 @@ public class SysFileServiceImpl implements SysFileService {
 
                 boolean deleted = FileUtil.deleteFile(new File(existFileIndex.getPath()), true);
                 if (deleted) {
-                    return sysFileDAO.deleteById(existFileIndex.getId()) != 0;
+                    return sysFileDAO.deleteById(existFileIndex.getId());
                 } else {
                     return false;
                 }
@@ -107,7 +143,7 @@ public class SysFileServiceImpl implements SysFileService {
                 log.error("", exception);
                 boolean deleted = FileUtil.deleteFile(new File(existFileIndex.getPath()), false);
                 if (deleted) {
-                    return sysFileDAO.deleteById(existFileIndex.getId()) != 0;
+                    return sysFileDAO.deleteById(existFileIndex.getId());
                 } else {
                     return false;
                 }
@@ -187,7 +223,6 @@ public class SysFileServiceImpl implements SysFileService {
         return resultMap;
     }
 
-
     @Override
     public boolean update(SysFile sysFile) {
         setCommon(sysFile);
@@ -196,12 +231,10 @@ public class SysFileServiceImpl implements SysFileService {
         return sysFileDAO.update(sysFile);
     }
 
-
     @Override
     public boolean updateAll(List<SysFile> records) {
         return sysFileDAO.updateAll(records);
     }
-
 
     @Override
     public BatchResult updateAllByCodes(List<SysFile> records) {
@@ -223,7 +256,6 @@ public class SysFileServiceImpl implements SysFileService {
     public List<SysFile> listByCode(String code) {
         return sysFileDAO.listByCode(code);
     }
-
 
     /**
      * 文件持久化并在数据库做记录
@@ -402,20 +434,6 @@ public class SysFileServiceImpl implements SysFileService {
 
     }
 
-    /**
-     * 判断字符串是不字
-     *
-     * @param str 字符串
-     * @return true=是数字/false=非数字
-     */
-    public static boolean isNumberString(String str) {
-        if (str == null || str.trim().length() == 0) {
-            return false;
-        }
-        Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
-        return pattern.matcher(str).matches();
-    }
-
     @Override
     public SysFile getByIdOrCode(Object idOrCode) {
         log.debug("文件下载，参数接受 code / id={}", idOrCode);
@@ -464,7 +482,7 @@ public class SysFileServiceImpl implements SysFileService {
                         , clientHttpResponse.getStatusText()
                 );
                 FileOutputStream fileOutputStream = new FileOutputStream(filename);
-                 copy(clientHttpResponse.getBody(), fileOutputStream);
+                copy(clientHttpResponse.getBody(), fileOutputStream);
                 fileOutputStream.close();
                 return new File(filename);
             });
@@ -474,29 +492,7 @@ public class SysFileServiceImpl implements SysFileService {
             throw new RuntimeException(exception);
         }
 
-    }  /**
-     * BIO方式拷贝
-     *
-     * @param in  输入
-     * @param out 输出
-     * @return int int
-     * @throws IOException IOException
-     */
-    public static int copy(InputStream in, OutputStream out) throws IOException {
-        if (in == null) throw new RuntimeException("No InputStream specified");
-        if (out == null) throw new RuntimeException("No OutputStream specified");
-
-        int byteCount = 0;
-        byte[] buffer = new byte[4096];
-
-        int bytesRead;
-        for (boolean var4 = true; (bytesRead = in.read(buffer)) != -1; byteCount += bytesRead) {
-            out.write(buffer, 0, bytesRead);
-        }
-        out.flush();
-        return byteCount;
     }
-
 
     @Override
     public Page<SysFile> listPage(SysFilePageable pageable) {

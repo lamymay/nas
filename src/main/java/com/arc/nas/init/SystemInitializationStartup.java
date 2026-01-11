@@ -16,7 +16,6 @@ import java.lang.reflect.Field;
 
 /**
  * 初始化操作
- *
  */
 @Component
 public class SystemInitializationStartup implements ApplicationListener<ContextRefreshedEvent> {

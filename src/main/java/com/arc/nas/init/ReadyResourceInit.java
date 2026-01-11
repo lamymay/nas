@@ -10,7 +10,6 @@ import static com.arc.nas.init.GetLocalIPAddress.localNetAddress;
 
 /**
  * 初始化相关操作
- *
  */
 public class ReadyResourceInit {
 
@@ -83,7 +82,6 @@ public class ReadyResourceInit {
     public static void setWriteableDirectory(File writeableDirectory) {
         ReadyResourceInit.writeableDirectory = writeableDirectory;
     }
-
 
 
 }

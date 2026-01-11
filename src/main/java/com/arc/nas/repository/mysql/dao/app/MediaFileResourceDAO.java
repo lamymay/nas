@@ -22,9 +22,9 @@ public interface MediaFileResourceDAO {
 
     boolean updateAll(List<MediaFileResource> records);
 
-    int deleteAll( );
+    int deleteAll();
 
-    int  deleteByPaths(List<String> paths);
+    int deleteByPaths(List<String> paths);
 
     MediaFileResource getById(Long id);
 

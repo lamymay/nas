@@ -53,7 +53,7 @@ public class FileSameCheckTool {
 
     }
 
-    public static String calculateHashSHA256( byte[] content) {
+    public static String calculateHashSHA256(byte[] content) {
         try {
             return calculate(MessageDigest.getInstance("SHA-256"), content);
         } catch (Exception exception) {
@@ -61,18 +61,19 @@ public class FileSameCheckTool {
             return null;
         }
     }
+
     public static String calculate(MessageDigest digest, byte[] content) {
-        return calculateCloseable(digest,new ByteArrayInputStream(content));
+        return calculateCloseable(digest, new ByteArrayInputStream(content));
     }
 
     public static String calculate(MessageDigest digest, String content, Charset charset) {
         // StandardCharsets.UTF_8
-        return calculateCloseable(digest,new ByteArrayInputStream(content.getBytes(charset)));
+        return calculateCloseable(digest, new ByteArrayInputStream(content.getBytes(charset)));
     }
 
     public static String calculate(MessageDigest digest, File file) {
         try {
-            return calculateCloseable(digest,new FileInputStream(file)  );
+            return calculateCloseable(digest, new FileInputStream(file));
         } catch (FileNotFoundException exception) {
             log.error("Error calculate", exception);
             throw new RuntimeException(exception);
@@ -80,7 +81,7 @@ public class FileSameCheckTool {
 
     }
 
-    public static String calculateHashSHA256(   InputStream is) {
+    public static String calculateHashSHA256(InputStream is) {
         try {
             return calculateCloseable(MessageDigest.getInstance("SHA-256"), is);
         } catch (Exception exception) {
@@ -88,7 +89,8 @@ public class FileSameCheckTool {
             return null;
         }
     }
-    public static String calculateCloseable(  MessageDigest digest,InputStream is) {
+
+    public static String calculateCloseable(MessageDigest digest, InputStream is) {
         try {
             try (is) {
                 byte[] buffer = new byte[8192];

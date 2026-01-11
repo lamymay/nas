@@ -142,15 +142,12 @@
 
         <input id="searchKeyword" placeholder="搜索媒体关键字" type="text"/>
         <button onclick="loadMedia()">搜索媒体</button>
-        <button onclick="showAllMedia()">显示全部</button>
-        <button onclick="selectAllMedia()">全选</button>
-        <button onclick="clearAllSelection()">取消全选</button>
     </div>
     <button onclick="toggleSettings(true)" style="background: #666; border-color: #666;">系统设置</button>
 </div>
 
-<div id="settings-modal">
-    <div class="modal-content">
+<div id="settings-modal" onclick="toggleSettings(false)">
+    <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-top: 0;">管理设置</h3>
         <hr/>
         <div style="margin-bottom: 25px;">
@@ -158,13 +155,18 @@
             <button onclick="refreshThumbnails()">刷新所有缩略图</button>
         </div>
         <div>
-            <h4>扫描路径配置 (每行一个路径)</h4>
-            <textarea id="pathsTextarea" placeholder="请输入绝对路径，例如：&#10;D:\Media\Movies&#10;E:\Photos"></textarea>
+            <div>
+                <h4>扫描路径配置 (每行一个路径)</h4>
+                <button onclick="saveAllPaths()" style="background: #28a745; border-color: #28a745;">
+                    保存扫描路径(系统延迟自动更新媒体库)
+                </button>
+            </div>
+            <textarea id="pathsTextarea"
+                      placeholder="请输入绝对路径，例如：&#10;D:\Media\Movies&#10;E:\Photos"></textarea>
             <div style="margin-top: 15px; display: flex; justify-content: space-between;">
-                <div>
-                    <button onclick="saveAllPaths()" style="background: #28a745; border-color: #28a745;">保存扫描路径</button>
-                </div>
-                <button onclick="toggleSettings(false)" style="background: #eee; border-color: #ccc; color: #333;">关闭</button>
+                <button onclick="toggleSettings(false)" style="background: #eee; border-color: #ccc; color: #333;">
+                    关闭
+                </button>
             </div>
         </div>
     </div>
@@ -177,8 +179,12 @@
 
 <div id="tags-search-bar">
     <input id="tagKeyword" placeholder="搜索标签" type="text"/>
-    <button onclick="fetchTags()">搜索</button>
-    <button onclick="clearTagSearch()">清空</button>
+    <button onclick="clearTagSearch()">清空标签条件</button>
+    <button onclick="fetchTags()">通过标签过滤</button>
+
+    <button onclick="showAllMedia()">显示全部(强制忽略标签过滤)</button>
+    <button onclick="selectAllMedia()">全选</button>
+    <button onclick="clearAllSelection()">取消全选</button>
 </div>
 
 <div id="tags-area"></div>
@@ -195,13 +201,13 @@
         matchThumbnails: "/nas/api/media/matchThumbnails",
         saveResource: "/nas/media/resource/saves",
         listResource: "/nas/media/resource/listAll",
-        removeResource: "/nas/media/resource/removes" // 注意：此处根据你提供的优化后的接口
+        removeResource: "/nas/media/resource/removes"
     };
 
     let tagGroups = [];
     let selectedMedia = new Set();
     let selectedMediaTypes = new Set(["VIDEO", "IMAGE"]);
-    let originalPaths = []; // 记录打开设置时的原始路径
+    let originalPaths = [];
 
     let marquee = null;
     let startX = 0, startY = 0;
@@ -271,7 +277,6 @@
         if (show) fetchPathsToTextarea();
     }
 
-    // 获取路径并填充到 Textarea
     function fetchPathsToTextarea() {
         fetch(API.listResource)
             .then(r => r.json())
@@ -281,14 +286,11 @@
             });
     }
 
-    // 保存所有路径：执行比对逻辑
     async function saveAllPaths() {
         const text = document.getElementById("pathsTextarea").value.trim();
         const currentPaths = text.split('\n').map(p => p.trim()).filter(p => p !== "");
 
-        // 1. 计算需要删除的路径 (存在于 original 但不在 current)
         const toDelete = originalPaths.filter(p => !currentPaths.includes(p));
-        // 2. 计算需要新增的路径 (存在于 current 但不在 original)
         const toAdd = currentPaths.filter(p => !originalPaths.includes(p));
 
         if (toDelete.length === 0 && toAdd.length === 0) {
@@ -297,18 +299,13 @@
         }
 
         try {
-            // 处理删除
             if (toDelete.length > 0) {
-                // 如果你的接口支持 @RequestBody 的 GET，请确保后端能正确接收。
-                // 某些浏览器 GET 不支持 Body，若报错请联系后端改为 POST。
                 await fetch(API.removeResource, {
-                    method: "POST", // 建议配合后端修改后的 deleteAll 方法
+                    method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ folders: toDelete })
                 });
             }
-
-            // 处理新增
             if (toAdd.length > 0) {
                 await fetch(API.saveResource, {
                     method: "POST",
@@ -316,7 +313,6 @@
                     body: JSON.stringify({ folders: toAdd })
                 });
             }
-
             showToast("保存成功，路径已同步");
             toggleSettings(false);
         } catch (err) {
@@ -325,7 +321,6 @@
         }
     }
 
-    /* 刷新缩略图 */
     async function refreshThumbnails() {
         if (!confirm("确定要刷新所有视频和图片的缩略图吗？")) return;
         try {
@@ -341,7 +336,6 @@
         } catch (err) { showToast("请求失败"); }
     }
 
-    /* 标签操作保持不变 */
     function fetchTags() {
         const keyword = document.getElementById("tagKeyword").value.trim();
         fetch(API.listTags, {
@@ -445,26 +439,39 @@
     function drag(ev) {
         const code = ev.currentTarget.dataset.code;
         if (!selectedMedia.has(code)) {
-            selectedMedia.clear();
+            clearAllSelection();
             selectedMedia.add(code);
-            toggleSelect(ev.currentTarget);
+            ev.currentTarget.classList.add("selected");
         }
-        ev.dataTransfer.setData("application/json", JSON.stringify(Array.from(selectedMedia)));
+        const codesToTransfer = Array.from(selectedMedia);
+        ev.dataTransfer.setData("application/json", JSON.stringify(codesToTransfer));
+        ev.dataTransfer.effectAllowed = "move";
     }
 
     function drop(ev) {
         ev.preventDefault();
         const tagCode = ev.currentTarget.dataset.tag;
-        const codes = JSON.parse(ev.dataTransfer.getData("application/json"));
+        let codes = [];
+        try {
+            const data = ev.dataTransfer.getData("application/json");
+            if (data) codes = JSON.parse(data);
+        } catch (e) {}
+
+        if (!codes || codes.length === 0) codes = Array.from(selectedMedia);
+        if (!codes || codes.length === 0) return;
+
         fetch(API.updateTags, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tagCode, fileCodes: codes })
-        }).then(r => r.json()).then(res => {
+        })
+        .then(r => r.json())
+        .then(res => {
             if (res.success) {
                 showToast(`打标签成功，共 ${codes.length} 个文件`);
                 codes.forEach(code => {
-                    document.querySelector(`.media-item[data-code='${code}']`)?.remove();
+                    const el = document.querySelector(`.media-item[data-code='${code}']`);
+                    if (el) el.remove();
                     selectedMedia.delete(code);
                 });
             }

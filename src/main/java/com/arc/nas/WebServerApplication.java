@@ -50,7 +50,7 @@ public class WebServerApplication {
         }
         ConfigurableApplicationContext context = SpringApplication.run(WebServerApplication.class, args);
         log.info("项目启动耗时{}", StringTool.getTimeStringSoFar(t1));
-        log.info("context.isActive={}",context.isActive());
+        log.info("context.isActive={}", context.isActive());
 
     }
 

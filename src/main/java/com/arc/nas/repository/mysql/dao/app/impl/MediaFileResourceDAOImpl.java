@@ -62,7 +62,7 @@ public class MediaFileResourceDAOImpl extends ServiceImpl<MediaFileResourceMappe
         if (paths == null || paths.isEmpty()) {
             return 0;
         }
-        return   this.getBaseMapper().deleteByPaths(paths);
+        return this.getBaseMapper().deleteByPaths(paths);
     }
 
 

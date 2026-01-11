@@ -103,9 +103,8 @@ public class SysFileDAOImpl extends ServiceImpl<SysFileMapper, SysFile> implemen
     }
 
     @Override
-    public int deleteById(Long id) {
-        return this.getBaseMapper().deleteById(id);
-
+    public boolean deleteById(Long id) {
+        return this.getBaseMapper().deleteById(id) != 0;
     }
 
     @Override

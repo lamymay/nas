@@ -15,6 +15,7 @@ public class CodeUtil {
 
     public static final String ONE_ONE = "11";
     public static final String mosaic = "*";
+    private static final Map<String, List<String>> urlsMap = new HashMap<>();
     /**
      * 夺宝码的取值范围
      */
@@ -24,7 +25,6 @@ public class CodeUtil {
      */
     public static int INIT_REDEMPTION_CODE_LENGTH = 8;
     static Random random = new Random();
-    private static final Map<String, List<String>> urlsMap = new HashMap<>();
 
     /**
      * 创建一个随机的字符串的code length=16

@@ -1,4 +1,3 @@
-
 package com.arc.nas.timer;
 
 import org.springframework.context.annotation.Bean;

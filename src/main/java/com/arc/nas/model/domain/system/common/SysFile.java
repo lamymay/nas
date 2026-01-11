@@ -82,19 +82,19 @@ public class SysFile implements Serializable {
     private Integer status;// 逻辑删除用的标识 0=删除的不可使用的
     private Integer referenceCount;// 引用计数 reference_count
     private String remark;// 描述
-/*
-| 状态                   | 含义          |
-| -------------------- | -------------- |
-| PENDING              | 文件刚扫描，未处理|
-| THUMBNAIL_GENERATING | 缩略图生成中     |
-| THUMBNAIL_DONE       | 缩略图生成完成   |
-| TRANSCODE_PENDING    | 转码待处理      |
-| TRANSCODING          | 转码中          |
-| TRANSCODE_DONE       | 转码完成        |
-| HASH_DONE       | HASH完成        |
-| END       | END        |
-| FAILED               | 处理失败（缩略图/转码失败） |
-*/
+    /*
+    | 状态                   | 含义          |
+    | -------------------- | -------------- |
+    | PENDING              | 文件刚扫描，未处理|
+    | THUMBNAIL_GENERATING | 缩略图生成中     |
+    | THUMBNAIL_DONE       | 缩略图生成完成   |
+    | TRANSCODE_PENDING    | 转码待处理      |
+    | TRANSCODING          | 转码中          |
+    | TRANSCODE_DONE       | 转码完成        |
+    | HASH_DONE       | HASH完成        |
+    | END       | END        |
+    | FAILED               | 处理失败（缩略图/转码失败） |
+    */
     private String taskStatus;//标识系统对文件的处理流程
     private String thumbnail;// 多个缩略图 用英文逗号分割
     private String author;
@@ -218,7 +218,7 @@ public class SysFile implements Serializable {
         return createSysFile(file, mediaType, "");
     }
 
-    public static SysFile createSysFileSimple(File file,String taskStatus) {
+    public static SysFile createSysFileSimple(File file, String taskStatus) {
         String mediaType = FileUtil.getFileType(file.getName()); // VIDEO / AUDIO / IMAGE / FILE
         String remark = "";
 

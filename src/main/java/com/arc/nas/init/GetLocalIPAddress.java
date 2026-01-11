@@ -12,7 +12,7 @@ public class GetLocalIPAddress {
 
     private static final Logger log = LoggerFactory.getLogger(GetLocalIPAddress.class);
 
-  public static String localNetAddress = null;
+    public static String localNetAddress = null;
 
     static {
         try {
@@ -31,6 +31,11 @@ public class GetLocalIPAddress {
         } catch (SocketException e) {
             log.error("GetLocalIPAddress get ip error.", e);
         }
+        log.info("GetLocalIPAddress get localNetAddress={}", localNetAddress);
+        if (localNetAddress == null) {
+            localNetAddress = "127.0.0.1";
+        }
+
     }
 
     public static String getLocalIPAddress() {

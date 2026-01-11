@@ -42,7 +42,7 @@ import static com.arc.util.file.FFmpegThumbnailGenerator.generateVideoThumbnails
 public class MediaServiceImpl implements MediaService {
 
     public final static String nomedia = ".nomedia";
-    public  final static String ignore = ".ignore";
+    public final static String ignore = ".ignore";
     final static String thumbnailsDefaultFolderName = ".thumbnails.bundle";
     final static String userHome = System.getProperty("user.home");
     private static final Logger log = LoggerFactory.getLogger(MediaServiceImpl.class);
@@ -70,7 +70,7 @@ public class MediaServiceImpl implements MediaService {
     @Override
     public Integer scan(String... folders) {
         log.info("开始扫描同步, 参数={}", JSON.toJSONString(folders));
-        if (folders == null || folders.length == 0) return 0;
+        if (folders == null ) return 0;
 
         // 1. 扫描磁盘：获取当前所有文件的最新状态
         List<File> allDiskFiles = new ArrayList<>();
@@ -82,6 +82,12 @@ public class MediaServiceImpl implements MediaService {
             List<File> tmp = FileUtil.listFileByDir(folder, ignoreFile);
             if (tmp != null) allDiskFiles.addAll(tmp);
         }
+
+        String thumbnailRootFolder = getThumbnailRoot().getAbsolutePath();
+        List<File> tmpThumbnail = FileUtil.listFileByDir(thumbnailRootFolder, ignoreFile);
+        if (tmpThumbnail != null) allDiskFiles.addAll(tmpThumbnail);
+
+
         // 将磁盘文件转为 Map，Key 为绝对路径，方便快速比对
         Map<String, File> diskPathMap = allDiskFiles.stream()
                 .collect(Collectors.toMap(File::getAbsolutePath, f -> f, (o, n) -> n));
@@ -97,6 +103,7 @@ public class MediaServiceImpl implements MediaService {
 
         // 3. 计算【删除】：找出数据库里有，但磁盘上已经消失的
         for (SysFile dbFile : index) {
+            if (dbFile == null) continue;
             if (!diskPathMap.containsKey(dbFile.getPath())) {
                 toDelete.add(dbFile);
             }
@@ -125,19 +132,20 @@ public class MediaServiceImpl implements MediaService {
             }
         }
 
+
         // 5. 执行数据库操作
         if (!toDelete.isEmpty()) {
-            log.info("清理失效索引: {} 条", toDelete.size());
+            log.info("扫描-toDelete-清理失效索引: {} 条", toDelete.size());
             deleteAll(toDelete); // 记得在此方法内同步删除 H2 里的元数据
         }
 
         if (!toInsert.isEmpty()) {
-            log.info("发现新文件: {} 条", toInsert.size());
+            log.info("扫描-toInsert-发现新文件: {} 条", toInsert.size());
             sysFileDAO.saveAll(toInsert);
         }
 
         if (!toUpdate.isEmpty()) {
-            log.info("检测到内容变更: {} 条", toUpdate.size());
+            log.info("扫描-toUpdate-检测到内容变更: {} 条", toUpdate.size());
             sysFileDAO.updateAll(toUpdate);
         }
 
@@ -177,6 +185,7 @@ public class MediaServiceImpl implements MediaService {
         int cunt = 0;
         if (!toDelete.isEmpty()) {
             for (SysFile sysFile : toDelete) {
+                log.info("### 删除索引 delete sysFile={}", JSON.toJSONString(sysFile));
                 // 1 处理缩略图
                 String thumbnail = sysFile.getThumbnail();
                 if (thumbnail != null) {
@@ -189,8 +198,15 @@ public class MediaServiceImpl implements MediaService {
                         fileService.deleteByCode(thumbnailFileCode);
                     }
                 }
-                // 2  删除文件索引
-                Boolean deleted = fileService.deleteById(sysFile.getId());
+                boolean deleted = false;
+                if ("THUMBNAIL".equals(sysFile.getMediaType())) {
+                    // 2.1  缩略图的情况下 删除文件索引 & 删除文件
+                    deleted = fileService.deleteById(sysFile.getId());
+                } else {
+                    // 2.2  非缩略图的情况下 只删除文件索引 不删除文件系统的原始文件（但是文件的缩略图在第一步已经被删除了）
+                    deleted = sysFileDAO.deleteById(sysFile.getId());
+                }
+
                 if (deleted) {
                     cunt = cunt + 1;
                 }
@@ -253,9 +269,7 @@ public class MediaServiceImpl implements MediaService {
                 } else {
                     videoFile.setThumbnail(newThumbnail);
                 }
-
                 toUpdate.add(videoFile);
-
                 // 更新缩略图行
                 thumb.setMediaType("THUMBNAIL");
                 toUpdate.add(thumb);
@@ -293,15 +307,6 @@ public class MediaServiceImpl implements MediaService {
         // 2. 创建 DTO
         MediaItemDTO dto = new MediaItemDTO();
         BeanUtil.copyProperties(sysFile, dto);
-
-        // 3. 如果是视频，生成 segmentMap
-//        if ("VIDEO".equalsIgnoreCase(sysFile.getMediaType())) {
-//            List<MediaSegmentDTO> segments = generateSegments(sysFile); // 根据实际切片规则生成
-//            Map<String, List<MediaSegmentDTO>> segmentMap = new HashMap<>();
-//            segmentMap.put("original", segments);
-//            dto.setSegmentMap(segmentMap);
-//        }
-
         return dto;
     }
 
@@ -363,16 +368,8 @@ public class MediaServiceImpl implements MediaService {
             result.setMessage("请求为空");
             return result;
         }
-
-        int successCount = 0;
-        int failCount = 0;
-
-
         List<FileTagRelation> fileTagRelations = builtFileTagRelation(request);
-
-
         int removed = fileTagRelationDAO.deleteByFileCodesTagCodes(fileTagRelations);
-
         result.setSuccess(true);
         result.setMessage("删除完成,removed=" + removed);
         return result;
@@ -438,8 +435,6 @@ public class MediaServiceImpl implements MediaService {
 
         if (thumbnailRootFile.exists() && thumbnailRootFile.isDirectory()) {
             //  delete
-
-
             Map<String, SysFile> thumbnailMap = thumbnails.stream().collect(Collectors.toMap(
                     f -> f.getPath(),  // key=path
                     f -> f,      // value
@@ -477,7 +472,6 @@ public class MediaServiceImpl implements MediaService {
     }
 
     private GenerateThumbnailItemResult generateThumbnailsVideo(GenerateThumbnailConfig config) {
-
         // 1 查询db中的全部视频
         List<SysFile> videos = sysFileDAO.listAllByMediaType(VIDEO);
         GenerateThumbnailItemResult result = new GenerateThumbnailItemResult();
@@ -486,38 +480,40 @@ public class MediaServiceImpl implements MediaService {
         }
         result.setTotal(videos.size());
         List<SysFile> updateAll = new LinkedList<>();
-
         // ffmpeg 去处理视频得到截图
         for (SysFile video : videos) {
-            List<File> files = generateVideoThumbnails(video.getPath(), config.getThumbnailRoot(), Arrays.asList("00:00:05.000", "00:01:00.000"), config.getWidth(), config.isOverwrite());
-            List<SysFile> collect = files.stream()
-                    .filter(File::exists)
-                    .map(file -> SysFile.createSysFile(file, THUMBNAIL, "thumbnail"))
-                    .filter(item -> !indexDbExistSameThumbnails(item.getCode()))//
-                    .collect(Collectors.toList());
-            if (collect == null || collect.isEmpty()) {
-                continue;
-            }
-            for (SysFile sysFile : collect) {
-                sysFile.setTaskStatus("END");
-            }
-            boolean saveAll = fileService.saveAll(collect);
-            if (saveAll) {
-                final Set<String> thumbnailCodes;
-                if (video.getThumbnail() != null) {
-                    thumbnailCodes = Arrays.stream(video.getThumbnail().split(",")).collect(Collectors.toSet());
-                } else {
-                    thumbnailCodes = new HashSet<>();
+            if (video == null) continue;
+            boolean doThumbnails = StringTool.isBlank(video.getThumbnail());
+            if (doThumbnails || config.isForce()) {
+                List<File> files = generateVideoThumbnails(video.getPath(), config.getThumbnailRoot(), Arrays.asList("00:00:05.000", "00:01:00.000"), config.getWidth(), config.isOverwrite());
+                List<SysFile> collect = files.stream()
+                        .filter(File::exists)
+                        .map(file -> SysFile.createSysFile(file, THUMBNAIL, "thumbnail"))
+                        .filter(item -> !indexDbExistSameThumbnails(item.getCode()))//
+                        .collect(Collectors.toList());
+                if (collect == null || collect.isEmpty()) {
+                    continue;
                 }
+                for (SysFile sysFile : collect) {
+                    sysFile.setTaskStatus("END");
+                }
+                boolean saveAll = fileService.saveAll(collect);
+                if (saveAll) {
+                    final Set<String> thumbnailCodes;
+                    if (video.getThumbnail() != null) {
+                        thumbnailCodes = Arrays.stream(video.getThumbnail().split(",")).collect(Collectors.toSet());
+                    } else {
+                        thumbnailCodes = new HashSet<>();
+                    }
 
-                Set<String> thumbnails = collect.stream().map(item -> item.getCode()).collect(Collectors.toSet());
-                thumbnailCodes.addAll(thumbnails);
+                    Set<String> thumbnails = collect.stream().map(item -> item.getCode()).collect(Collectors.toSet());
+                    thumbnailCodes.addAll(thumbnails);
 
-                video.setThumbnail(String.join(",", thumbnailCodes));
-                video.setTaskStatus("END");
-                updateAll.add(video);
+                    video.setThumbnail(String.join(",", thumbnailCodes));
+                    video.setTaskStatus("END");
+                    updateAll.add(video);
+                }
             }
-
         }
         if (!updateAll.isEmpty()) sysFileDAO.updateAll(updateAll);
         return result;
@@ -548,30 +544,37 @@ public class MediaServiceImpl implements MediaService {
         List<SysFile> updateAll = new LinkedList<>();
         Long imageSkipSize = config.getImageSkipSize();
         for (SysFile file : fileList) {
+            if (file == null) continue;
+            boolean doThumbnails = false;// StringTool.isBlank(file.getThumbnail());
             if (file.getLength() <= imageSkipSize) {
-                continue;
+                doThumbnails = false;
             }
-            File imageThumbnail = generateImageThumbnail(new File(file.getPath()), new File(config.getThumbnailRoot()), config.getWidth(), config.isOverwrite(), "jpg");
-            SysFile imageThumbnailSysFile = createSysFile(imageThumbnail, THUMBNAIL, "thumbnail");
-            MediaItemDTO byIdOrCode = getByIdOrCode(imageThumbnailSysFile.getCode());
-            if (byIdOrCode != null) {
-                //  存在相同的文件了
-                continue;
-            }
-            imageThumbnailSysFile.setTaskStatus("END");
-            Long save = fileService.save(imageThumbnailSysFile);
-            if (save != null) {
-                final Set<String> thumbnailCodes;
-                if (file.getThumbnail() != null) {
-                    thumbnailCodes = Arrays.stream(file.getThumbnail().split(",")).collect(Collectors.toSet());
-                } else {
-                    thumbnailCodes = new HashSet<>();
+
+            if (doThumbnails || config.isForce()) {
+
+                File imageThumbnail = generateImageThumbnail(new File(file.getPath()), new File(config.getThumbnailRoot()), config.getWidth(), config.isOverwrite(), "jpg");
+                SysFile imageThumbnailSysFile = createSysFile(imageThumbnail, THUMBNAIL, "thumbnail");
+                MediaItemDTO byIdOrCode = getByIdOrCode(imageThumbnailSysFile.getCode());
+                if (byIdOrCode != null) {
+                    //  存在相同的文件了
+                    continue;
                 }
-                thumbnailCodes.add(imageThumbnailSysFile.getCode());
-                file.setThumbnail(String.join(",", thumbnailCodes));
-                file.setTaskStatus("END");
-                updateAll.add(file);
+                imageThumbnailSysFile.setTaskStatus("END");
+                Long save = fileService.save(imageThumbnailSysFile);
+                if (save != null) {
+                    final Set<String> thumbnailCodes;
+                    if (file.getThumbnail() != null) {
+                        thumbnailCodes = Arrays.stream(file.getThumbnail().split(",")).collect(Collectors.toSet());
+                    } else {
+                        thumbnailCodes = new HashSet<>();
+                    }
+                    thumbnailCodes.add(imageThumbnailSysFile.getCode());
+                    file.setThumbnail(String.join(",", thumbnailCodes));
+                    file.setTaskStatus("END");
+                    updateAll.add(file);
+                }
             }
+
 
         }
         if (!updateAll.isEmpty()) sysFileDAO.updateAll(updateAll);

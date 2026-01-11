@@ -1,5 +1,5 @@
---drop table  IF  EXISTS media_tag;
 --drop table  IF  EXISTS sys_file;
+--drop table  IF  EXISTS media_tag;
 --drop table  IF  EXISTS media_file_tag_relation;
 --drop table  IF  EXISTS media_file_resource;
 

@@ -24,8 +24,19 @@ import static com.arc.util.file.FileUtil.FileUtilConst.*;
  */
 public class FileUtil {
 
+    //***************************************************
+    //                   工具方法1- 静态属性定义
+    //***************************************************
+    static final double kByte = 1024;
+    static final double mByte = 1024 * kByte;
+    static final double gByte = 1024 * mByte;
+    static final double tByte = 1024 * gByte;
+    static final double eByte = 1024 * tByte;
+    static final double pByte = 1024 * eByte;
     private static final Logger log = LoggerFactory.getLogger(FileUtil.class);
     static Desktop desktop;
+    static boolean enableDebug = true;
+    static String osName = System.getProperty("os.name");
 
     static {
         try {
@@ -36,19 +47,6 @@ public class FileUtil {
             log.warn("Desktop not available, running in headless mode", e);
         }
     }
-
-    //***************************************************
-    //                   工具方法1- 静态属性定义
-    //***************************************************
-    static final double kByte = 1024;
-    static final double mByte = 1024 * kByte;
-    static final double gByte = 1024 * mByte;
-    static final double tByte = 1024 * gByte;
-    static final double eByte = 1024 * tByte;
-    static final double pByte = 1024 * eByte;
-    static boolean enableDebug = true;
-    static String osName = System.getProperty("os.name");
-
 
     public static File createFileIfNotExist(File canWriteFile) {
         if (canWriteFile == null) {
@@ -1695,6 +1693,70 @@ public class FileUtil {
         System.out.println(getExtension(file2));
     }
 
+    public static boolean deleteDirectoryV0(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            //递归删除目录中的子目录的
+            for (int i = 0; i < children.length; i++) {
+                boolean success = deleteDirectory(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+        }
+        // 目录此时为空，可以删除
+        return dir.delete();
+    }
+
+    public static void main(String[] args) {
+//        File inputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\adb\\SONY手机常见软件包名称.txt");
+//        File outputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\adb\\SONY手机常见软件包名称-no-duplicated.txt");
+
+        File inputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\s62\\all.txt");
+        File outputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\s62\\all-no-duplicated.txt");
+
+        TreeSet<String> lines = FileUtil.readLines(inputFile);
+        FileUtil.writeToDisk(lines, outputFile, true);
+    }
+
+
+//    public static boolean deleteFile(List<File> willDeleteFiles, boolean moveToTrash) {
+//        if (willDeleteFiles == null || willDeleteFiles.isEmpty()) {
+//            // 被比较的目录的文件hash和基准相同,但是由于位置原因 list为空跳过删除
+//            return true;
+//        } else {
+//            Set<Boolean> delFlag = new HashSet<>();
+//            for (File willDeleteFile : willDeleteFiles) {
+//                try {
+//                    delFlag.add(deleteFile(willDeleteFile, moveToTrash));
+//                } catch (Exception exception) {
+//                    log.error("删除文件异常,willDeleteFile:{}", willDeleteFile);
+//
+//                }
+//            }
+//
+//            // 无失败则是成功
+//            return !delFlag.contains(Boolean.FALSE);
+//
+//        }
+//    }
+
+    /**
+     * 删除
+     *
+     * @param files files
+     */
+    private void deleteFile(File... files) {
+        for (File file : files) {
+            if (file.exists()) {
+                try {
+                    boolean delete = file.delete();
+                } catch (Exception e) {
+                    log.error("ERROR 文件删除时候出错={}，filePath={}", e, file.getPath());
+                }
+            }
+        }
+    }
 
     public static class FileUtilConst {
 
@@ -1899,70 +1961,5 @@ public class FileUtil {
 
             return "{" + "\"sourceFileName\":" + sourceFileName + "," + "\"prefix\":" + prefix + "," + "\"suffix\":" + suffix + "}\n";
         }
-    }
-
-
-//    public static boolean deleteFile(List<File> willDeleteFiles, boolean moveToTrash) {
-//        if (willDeleteFiles == null || willDeleteFiles.isEmpty()) {
-//            // 被比较的目录的文件hash和基准相同,但是由于位置原因 list为空跳过删除
-//            return true;
-//        } else {
-//            Set<Boolean> delFlag = new HashSet<>();
-//            for (File willDeleteFile : willDeleteFiles) {
-//                try {
-//                    delFlag.add(deleteFile(willDeleteFile, moveToTrash));
-//                } catch (Exception exception) {
-//                    log.error("删除文件异常,willDeleteFile:{}", willDeleteFile);
-//
-//                }
-//            }
-//
-//            // 无失败则是成功
-//            return !delFlag.contains(Boolean.FALSE);
-//
-//        }
-//    }
-
-    /**
-     * 删除
-     *
-     * @param files files
-     */
-    private void deleteFile(File... files) {
-        for (File file : files) {
-            if (file.exists()) {
-                try {
-                    boolean delete = file.delete();
-                } catch (Exception e) {
-                    log.error("ERROR 文件删除时候出错={}，filePath={}", e, file.getPath());
-                }
-            }
-        }
-    }
-
-    public static boolean deleteDirectoryV0(File dir) {
-        if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
-            //递归删除目录中的子目录的
-            for (int i = 0; i < children.length; i++) {
-                boolean success = deleteDirectory(new File(dir, children[i]));
-                if (!success) {
-                    return false;
-                }
-            }
-        }
-        // 目录此时为空，可以删除
-        return dir.delete();
-    }
-
-    public static void main(String[] args) {
-//        File inputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\adb\\SONY手机常见软件包名称.txt");
-//        File outputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\adb\\SONY手机常见软件包名称-no-duplicated.txt");
-
-        File inputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\s62\\all.txt");
-        File outputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\s62\\all-no-duplicated.txt");
-
-        TreeSet<String> lines = FileUtil.readLines(inputFile);
-        FileUtil.writeToDisk(lines, outputFile, true);
     }
 }

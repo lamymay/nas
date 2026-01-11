@@ -58,7 +58,7 @@ public class MediaCMSV2RestController {
     }
 
     @GetMapping("/resource/listAll")
-    public ResponseEntity<List<MediaFileResource>> listAll(  ) {
+    public ResponseEntity<List<MediaFileResource>> listAll() {
         return ResponseEntity.ok(mediaResource.listAll());
 
     }

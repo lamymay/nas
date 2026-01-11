@@ -1,10 +1,10 @@
 package com.arc.nas.service.system.common;
 
 import com.arc.nas.model.domain.system.common.SysFile;
-import com.arc.nas.model.request.app.media.SysFilePageable;
-import com.arc.nas.model.request.app.media.SysFileQuery;
 import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
+import com.arc.nas.model.request.app.media.SysFilePageable;
+import com.arc.nas.model.request.app.media.SysFileQuery;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,7 +29,7 @@ public interface SysFileService {
 
     Long save(SysFile sysFile);
 
-    //删除文件并且清理
+    // 删除index & 文件系统中的文件
     Boolean deleteById(Long id);
 
     Boolean deleteByCode(String code);

@@ -479,39 +479,6 @@ public class StringTool {
 
     }
 
-
-    /**
-     * 截取非数字
-     *
-     * @param content 字符串
-     * @return 去除数字的字符串
-     */
-    public String splitNotNumber(String content) {
-        Pattern pattern = Pattern.compile("\\D+");
-        Matcher matcher = pattern.matcher(content);
-        while (matcher.find()) {
-            return matcher.group(0);
-        }
-        return "";
-    }
-
-    /**
-     * 判断一个字符串是否都为数字
-     *
-     * @param content 字符串
-     * @return boolean
-     */
-    public boolean isDigit(String content) {
-        return content.matches("[0-9]{1,}");
-    }
-
-    @Target({ElementType.FIELD})
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    public @interface ToStringIgnore {
-        // 该注释用于 忽略toString中的字段输出，例如password字段等
-    }
-
     public static String toString(Object obj) {
         if (obj == null)
             throw new IllegalArgumentException("object can not be null. ");
@@ -553,6 +520,7 @@ public class StringTool {
         builder.append("]}");
         return builder.toString();
     }
+
     /**
      * <p>格式化时间</p>
      * <p>保留两个时间单位</p>
@@ -586,5 +554,37 @@ public class StringTool {
         }
         builder.append(seconds).append("秒");
         return builder.toString();
+    }
+
+    /**
+     * 截取非数字
+     *
+     * @param content 字符串
+     * @return 去除数字的字符串
+     */
+    public String splitNotNumber(String content) {
+        Pattern pattern = Pattern.compile("\\D+");
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            return matcher.group(0);
+        }
+        return "";
+    }
+
+    /**
+     * 判断一个字符串是否都为数字
+     *
+     * @param content 字符串
+     * @return boolean
+     */
+    public boolean isDigit(String content) {
+        return content.matches("[0-9]{1,}");
+    }
+
+    @Target({ElementType.FIELD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    public @interface ToStringIgnore {
+        // 该注释用于 忽略toString中的字段输出，例如password字段等
     }
 }

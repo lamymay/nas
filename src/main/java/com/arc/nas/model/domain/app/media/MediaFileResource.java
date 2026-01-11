@@ -34,10 +34,11 @@ public class MediaFileResource implements Serializable {
         this.id = id;
     }
 
-    public MediaFileResource(String path  ) {
+    public MediaFileResource(String path) {
         this.path = path;
     }
-       public MediaFileResource(String path, Date updateTime  ) {
+
+    public MediaFileResource(String path, Date updateTime) {
         this.path = path;
         this.updateTime = updateTime;
     }
