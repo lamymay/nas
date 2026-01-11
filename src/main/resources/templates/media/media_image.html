@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <title>媒体库首页</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .media-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .media-card { width: 120px; cursor: pointer; }
+        .media-card img { width: 100%; height: auto; display: block; }
+
+        /* 模态窗口 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background-color: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .modal.show { display: flex; opacity: 1; flex-direction: column; }
+
+        .modal-content {
+            position: relative;
+            width: auto;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .modal img {
+            width: 100%;
+            height: auto;
+            transition: transform 0.25s ease;
+        }
+        .modal img.hidden { transform: scale(0.9); opacity: 0; }
+
+        /* 顶部悬浮信息 */
+        .modal-info {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            pointer-events: auto;
+            transition: opacity 0.2s ease;
+            user-select: text; /* 可以复制文字 */
+        }
+
+        .modal-info.show {
+            opacity: 1;
+        }
+
+        .delete-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+
+        /* 左右切换动画 */
+        .slide-left { animation: slideLeft 0.25s ease; }
+        .slide-right { animation: slideRight 0.25s ease; }
+        @keyframes slideLeft { from { transform: translateX(-50%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+        @keyframes slideRight { from { transform: translateX(50%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    </style>
+</head>
+<body>
+<div class="media-grid" id="mediaGrid"></div>
+
+<!-- 模态窗口 -->
+<div class="modal" id="modal">
+    <div class="modal-content" id="modalContent">
+        <div class="modal-info" id="modalInfo"></div>
+        <img id="modalImg" src="">
+    </div>
+</div>
+<!-- 在 body 内添加 toast 容器 -->
+<div id="toastContainer" style="
+    position: fixed;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    pointer-events: none;
+"></div>
+
+<script>
+    let imageItems = [];
+    let currentIndex = 0;
+    let startX = 0;
+    let deleteConfirm = false;
+
+    async function loadMedia() {
+        const response = await fetch('/nas/api/media/home?mediaType=IMAGE');
+        const data = await response.json();
+
+        const grid = document.getElementById('mediaGrid');
+        grid.innerHTML = '';
+
+        imageItems = data.content.filter(item => item.mediaType === 'IMAGE');
+
+      imageItems.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'media-card';
+
+    const img = document.createElement('img');
+    img.src = (item.thumbnails && item.thumbnails.length > 0 && item.thumbnails[0])
+                ? item.thumbnails[0]
+                : item.url;
+    img.alt = item.displayName;
+    img.dataset.index = index;
+    img.addEventListener('click', () => openModal(item));
+    card.appendChild(img);
+
+    grid.appendChild(card);
+});
+
+    }
+
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modalContent');
+    const modalImg = document.getElementById('modalImg');
+    const modalInfo = document.getElementById('modalInfo');
+
+    function updateModalInfo(item) {
+        modalInfo.innerHTML = `
+            <span>名称: ${item.displayName} | 大小: ${(item.length/1024).toFixed(2)} KB | 状态: ${item.taskStatus}| 位置: ${item.path}</span>
+            <button class="delete-btn" id="deleteBtn">删除</button>
+        `;
+        const deleteBtn = document.getElementById('deleteBtn');
+        deleteConfirm = false;
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if(!deleteConfirm){
+                deleteConfirm = true;
+                deleteBtn.textContent = '确定删除?';
+                setTimeout(() => {
+                    deleteConfirm = false;
+                    deleteBtn.textContent = '删除';
+                }, 3000); // 3秒取消确认
+            } else {
+                const code = item.code;
+                try {
+                    const res = await fetch(`/nas/api/media/remove/${code}`);
+                    const success = await res.json();
+                     if(success){
+                        showToast('删除成功');
+                        closeModal();
+                        loadMedia();
+                    } else {
+                        showToast('删除失败');
+                    }
+
+                } catch(err){
+                    alert('删除异常');
+                    console.error(err);
+                }
+            }
+        });
+    }
+
+    function openModal(item) {
+        currentIndex = imageItems.findIndex(i => i.code === item.code);
+        modal.style.display = 'flex';
+
+        modalImg.classList.add("hidden");
+        updateModalInfo(item);
+
+        setTimeout(() => {
+            modal.classList.add("show");
+            modalImg.src = item.url;
+            modalImg.classList.remove("hidden");
+        }, 10);
+    }
+
+    function closeModal() {
+        modal.classList.remove("show");
+        setTimeout(() => modal.style.display = 'none', 250);
+    }
+
+    function showPrev() {
+        if(imageItems.length === 0) return;
+        currentIndex = (currentIndex - 1 + imageItems.length) % imageItems.length;
+        const item = imageItems[currentIndex];
+        modalImg.src = item.url;
+        updateModalInfo(item);
+        playSwitchAnimation("left");
+    }
+
+    function showNext() {
+        if(imageItems.length === 0) return;
+        currentIndex = (currentIndex + 1) % imageItems.length;
+        const item = imageItems[currentIndex];
+        modalImg.src = item.url;
+        updateModalInfo(item);
+        playSwitchAnimation("right");
+    }
+
+    function playSwitchAnimation(direction) {
+        modalImg.classList.remove('slide-left', 'slide-right');
+        void modalImg.offsetWidth;
+        modalImg.classList.add(direction === "left" ? 'slide-left' : 'slide-right');
+    }
+
+    // 鼠标悬停显示顶部信息
+    modalContent.addEventListener('mousemove', (e) => {
+        if(e.clientY - modalContent.getBoundingClientRect().top < 50){
+            modalInfo.classList.add('show');
+        } else {
+            modalInfo.classList.remove('show');
+        }
+    });
+
+    // 点击左右屏幕切换或点击图片外退出
+    modal.addEventListener('click', (e) => {
+        if(e.target !== modalImg && e.target !== modalInfo) { closeModal(); return; }
+        const rect = modal.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+        if(x < width * 0.4) showPrev();
+        else if(x > width * 0.6) showNext();
+    });
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if(e.key === "Escape") closeModal();
+        else if(e.key === "ArrowLeft") showPrev();
+        else if(e.key === "ArrowRight") showNext();
+    });
+
+    // 滑动手势支持
+    modalImg.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
+    modalImg.addEventListener('touchend', (e) => {
+        const endX = e.changedTouches[0].clientX;
+        const diff = endX - startX;
+        if(diff > 50) showPrev();
+        else if(diff < -50) showNext();
+    });
+
+    window.onload = loadMedia;
+
+
+function showToast(message, duration = 2000) {
+    const container = document.getElementById('toastContainer');
+
+    const toast = document.createElement('div');
+    toast.textContent = message;
+
+    // iOS 风格样式
+    Object.assign(toast.style, {
+        background: 'rgba(0, 0, 0, 0.8)',
+        color: '#fff',
+        padding: '10px 16px',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: '500',
+        marginTop: '8px',
+        opacity: '0',
+        transform: 'translateY(-20px)',
+        transition: 'opacity 0.3s ease, transform 0.3s ease',
+        pointerEvents: 'auto',
+        maxWidth: '80%',
+        textAlign: 'center',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    });
+
+    container.appendChild(toast);
+
+    // 显示动画
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+
+    // 自动消失
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            if(toast.parentNode) container.removeChild(toast);
+        }, 300);
+    }, duration);
+}
+</script>
+
+
+</body>
+</html>

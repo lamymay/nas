@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>视频库</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin:0; background:#f9f9f9; }
+        header {
+            display:flex; align-items:center; gap:8px;
+            padding:8px 12px; background:#fff; border-bottom:1px solid #ccc;
+            position:sticky; top:0; z-index:100;
+            flex-wrap:wrap; /* 窄屏下换行 */
+        }
+        #searchWrapper { flex:1; position:relative; display:flex; align-items:center; min-width:120px; }
+        #searchInput {
+            flex:1; padding:6px 30px 6px 8px; border-radius:4px; border:1px solid #ccc;
+            font-size:14px; min-width:0;
+        }
+        #searchBtn {
+            position:absolute; right:4px; cursor:pointer; font-size:16px; background:none; border:none;
+        }
+        #settingsBtn { padding:6px 12px; border-radius:4px; border:1px solid #ccc; background:#f0f0f0; cursor:pointer; }
+
+        #settingsPanel {
+            position:fixed; top:50px; right:10px; width:250px; max-height:80vh; background:#fff; border:1px solid #ccc;
+            box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:12px; display:none; flex-direction:column; gap:12px; overflow-y:auto; z-index:200;
+        }
+        #settingsPanel h4 { margin:0 0 6px 0; font-size:14px; }
+        .btn-group { display:flex; flex-wrap:wrap; gap:4px; }
+        .btn-group button {
+            border:1px solid #ccc; background:#f0f0f0; padding:4px 8px; border-radius:4px; cursor:pointer; transition:0.2s;
+        }
+        .btn-group button.active { background:#007bff; color:#fff; border-color:#007bff; }
+
+        .main-content { padding:12px; display:flex; flex-direction:column; gap:12px; max-width:1200px; margin:0 auto; }
+        #playerContainer { display:none; flex-direction:column; width:100%; max-width:100%; background:#000; }
+        #playerContainer video { width:100%; height:60vh; object-fit:contain; }
+        #currentVideoInfo {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:6px 0; background:#fff; color:#000; font-size:14px;
+        }
+        #currentVideoInfo .more-btn, #currentVideoInfo #shareBtn {
+            cursor:pointer; padding:4px 6px; border-radius:4px; border:1px solid #ccc; background:#f0f0f0;
+            margin-left:4px;
+        }
+
+        .media-grid { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
+        .media-card { width:160px; height:90px; cursor:pointer; position:relative; overflow:hidden; border-radius:4px; background:#000; }
+        .media-card img { width:100%; height:100%; object-fit:cover; display:block; transition:0.2s; }
+
+        #toastContainer { position:fixed; top:10%; left:50%; transform:translateX(-50%); pointer-events:none; z-index:9999; }
+
+        /* 二维码弹窗 */
+        #qrModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:9999; }
+        #qrModalContent { background:#fff; padding:20px; border-radius:8px; text-align:center; position:relative; }
+        #qrClose { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; }
+        #qrCodeContainer { width:160px; height:160px; margin:0 auto; }
+        #qrUrlInput { margin-top:10px; width:220px; text-align:center; }
+
+        /* 设置刷新缩略图按钮 */
+        #refreshThumbBtn { margin-top:6px; padding:6px; border-radius:4px; border:1px solid #ccc; background:#f0f0f0; cursor:pointer; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div id="searchWrapper">
+        <input id="searchInput" placeholder="搜索视频..." type="text">
+        <span id="searchBtn">🔍</span>
+    </div>
+    <button id="settingsBtn">设置</button>
+</header>
+
+<div id="settingsPanel">
+    <h4>排序依据</h4>
+    <div class="btn-group" id="orderFieldGroup">
+        <button class="active" data-value="createTime">创建时间</button>
+        <button data-value="updateTime">更新时间</button>
+    </div>
+    <h4>排序方向</h4>
+    <div class="btn-group" id="orderDirectionGroup">
+        <button class="active" data-value="desc">倒序</button>
+        <button data-value="asc">升序</button>
+    </div>
+    <h4>缩略图模式</h4>
+    <div class="btn-group" id="thumbModeGroup">
+        <button class="active" data-value="false">显示第一张</button>
+        <button data-value="true">缩略图轮播</button>
+    </div>
+    <button id="refreshThumbBtn">刷新缩略图</button>
+</div>
+
+<div class="main-content">
+    <div id="playerContainer">
+        <video controls id="mainVideo"></video>
+        <div id="currentVideoInfo">
+            <span id="videoTitle"></span>
+            <div style="position:relative; display:flex; align-items:center;">
+                <button id="shareBtn">分享</button>
+                <div id="videoMoreMenu"
+                     style="display:none; position:absolute; top:28px; right:0; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.15); z-index:300; flex-direction:column;">
+                    <button onclick="deleteCurrentVideo()"
+                            style="padding:6px 12px; background:none; border:none; text-align:left; cursor:pointer;">
+                        删除视频
+                    </button>
+                </div>
+                <button id="videoMoreBtn">⋮</button>
+            </div>
+        </div>
+    </div>
+    <div class="media-grid" id="mediaGrid"></div>
+</div>
+
+<div id="toastContainer"></div>
+
+<div id="qrModal">
+    <div id="qrModalContent">
+        <span id="qrClose">×</span>
+        <h3>分享视频链接</h3>
+        <div id="qrCodeContainer"></div>
+        <input id="qrUrlInput" readonly type="text"/>
+    </div>
+</div>
+
+<script src="/nas/js/qrcode.min.js"></script>
+<script>
+    const API = {
+     matchThumbnails: "/nas/api/media/matchThumbnails"
+ };
+ let videoItems=[], thumbMode=false, orderField='createTime', orderDirection='desc', keyword='';
+ let currentVideo=null;
+
+ // -------------------- 设置组 --------------------
+ function setupButtonGroup(groupId, callback){
+     const group=document.getElementById(groupId);
+     group.querySelectorAll('button').forEach(btn=>{
+         btn.addEventListener('click',()=>{
+             group.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+             btn.classList.add('active');
+             callback(btn.dataset.value);
+         });
+     });
+ }
+ setupButtonGroup('orderFieldGroup', val=>{ orderField=val; loadMedia(); });
+ setupButtonGroup('orderDirectionGroup', val=>{ orderDirection=val; loadMedia(); });
+ setupButtonGroup('thumbModeGroup', val=>{ thumbMode=val==='true'; renderGrid(); });
+
+ // -------------------- 设置弹窗 --------------------
+ const settingsBtn = document.getElementById('settingsBtn');
+ const settingsPanel = document.getElementById('settingsPanel');
+ settingsBtn.addEventListener('click', e=>{
+     e.stopPropagation();
+     settingsPanel.style.display = settingsPanel.style.display==='flex'?'none':'flex';
+ });
+
+ // -------------------- 搜索 --------------------
+ const searchInput = document.getElementById('searchInput');
+ const searchBtnEl = document.getElementById('searchBtn');
+ function doSearch(){ keyword = searchInput.value.trim(); loadMedia(); }
+ searchBtnEl.addEventListener('click', doSearch);
+ searchInput.addEventListener('keypress', e=>{if(e.key==='Enter') doSearch();});
+
+ // -------------------- 播放列表 --------------------
+ function getDefaultVideoThumbnail(){
+     const svg=`<svg width="160" height="90" xmlns="http://www.w3.org/2000/svg">
+         <rect width="160" height="90" rx="6" fill="#2a2a2a"/>
+         <polygon points="65,30 65,60 100,45" fill="white"/>
+     </svg>`;
+     return "data:image/svg+xml;base64,"+btoa(svg);
+ }
+
+ async function loadMedia(){
+     const params = new URLSearchParams({pageNumber:1,pageSize:90000,mediaType:'VIDEO',orderField,orderDirection,keyword});
+     const res = await fetch('/nas/api/media/home?' + params.toString());
+     const data = await res.json();
+     videoItems = data.content || [];
+     renderGrid();
+ }
+
+ function renderGrid(){
+     const grid=document.getElementById('mediaGrid');
+     grid.innerHTML='';
+     videoItems.forEach(item=>{
+         const card=document.createElement('div'); card.className='media-card';
+         let thumbs=Array.from(item.thumbnails||[]);
+         if(thumbs.length===0) thumbs=[getDefaultVideoThumbnail()];
+         const img=document.createElement('img'); img.src=thumbs[0]; card.appendChild(img);
+
+         if(thumbMode && thumbs.length>1){
+             let idx=0, intervalId=null;
+             const startCarousel=()=>{ if(intervalId) clearInterval(intervalId); intervalId=setInterval(()=>{ idx=(idx+1)%thumbs.length; img.src=thumbs[idx]; },800); };
+             const stopCarousel=()=>{ if(intervalId) clearInterval(intervalId); intervalId=null; img.src=thumbs[0]; };
+             card.addEventListener('mouseenter',startCarousel);
+             card.addEventListener('mouseleave',stopCarousel);
+         }
+
+         card.addEventListener('click',()=>playVideo(item));
+         grid.appendChild(card);
+     });
+ }
+
+ // -------------------- 播放器 --------------------
+ const playerContainer=document.getElementById('playerContainer');
+ const mainVideo=document.getElementById('mainVideo');
+ const videoTitle=document.getElementById('videoTitle');
+ const videoMoreBtnEl = document.getElementById('videoMoreBtn');
+ const videoMoreMenu = document.getElementById('videoMoreMenu');
+ const shareBtn = document.getElementById('shareBtn');
+
+ function playVideo(item){
+     currentVideo=item;
+     mainVideo.src=item.url;
+     videoTitle.textContent=item.displayName;
+     playerContainer.style.display='flex';
+     mainVideo.scrollIntoView({behavior:'smooth'});
+ }
+
+ // 视频更多菜单逻辑
+ videoMoreBtnEl.addEventListener('click', e=>{
+     e.stopPropagation();
+     videoMoreMenu.style.display = videoMoreMenu.style.display==='flex'?'none':'flex';
+ });
+
+ // 点击外部关闭菜单或设置面板或二维码
+ document.addEventListener('click', e=>{
+     if(settingsPanel.style.display==='flex' && !settingsPanel.contains(e.target) && e.target!==settingsBtn) settingsPanel.style.display='none';
+     if(videoMoreMenu.style.display==='flex' && !videoMoreMenu.contains(e.target) && e.target!==videoMoreBtnEl) videoMoreMenu.style.display='none';
+ });
+
+ // Esc键关闭
+ document.addEventListener('keydown', e=>{
+     if(e.key==="Escape"){
+         if(settingsPanel.style.display==='flex') settingsPanel.style.display='none';
+         if(videoMoreMenu.style.display==='flex') videoMoreMenu.style.display='none';
+         if(qrModal.style.display==='flex') qrModal.style.display='none';
+     }
+ });
+
+ // 删除当前播放视频
+ function deleteCurrentVideo(){
+     if(!currentVideo) return;
+     if(confirm(`确定删除视频：${currentVideo.displayName}?`)){
+         fetch(`/nas/api/media/remove/${currentVideo.code}`)
+             .then(r=>r.json())
+             .then(ok=>{
+                 showToast(ok?"删除成功":"删除失败");
+                 loadMedia();
+                 playerContainer.style.display='none';
+                 videoMoreMenu.style.display='none';
+             });
+     }
+ }
+
+ // -------------------- 二维码分享 --------------------
+ const qrModal=document.getElementById('qrModal');
+ const qrClose=document.getElementById('qrClose');
+ const qrContainer=document.getElementById('qrCodeContainer');
+ const qrUrlInput=document.getElementById('qrUrlInput');
+ let qrInstance=null;
+
+ shareBtn.addEventListener('click', ()=>{
+     const url = window.location.href;
+     qrUrlInput.value = url;
+     if(!qrInstance) qrInstance = new QRCode(qrContainer,{width:160,height:160,correctLevel:QRCode.CorrectLevel.H});
+     qrInstance.clear();
+     qrInstance.makeCode(url);
+     qrModal.style.display='flex';
+ });
+
+ qrClose.addEventListener('click', ()=>qrModal.style.display='none');
+ qrModal.addEventListener('click', e=>{if(e.target===qrModal) qrModal.style.display='none';});
+
+ // -------------------- 刷新缩略图 --------------------
+ const refreshThumbBtn = document.getElementById('refreshThumbBtn');
+ refreshThumbBtn.addEventListener('click', async ()=>{
+     if(confirm("确定刷新所有视频缩略图吗？")){
+         try{
+             const res = await fetch('/nas/api/media/matchThumbnails',{
+                 method:'POST',
+                 headers:{'Content-Type':'application/json'},
+                 body:JSON.stringify({force:true,width:480,overwrite:true})
+             });
+             const data = await res.json();
+             showToast("刷新缩略图请求已发送");
+             loadMedia();
+         }catch(err){
+             showToast("刷新失败："+err.message);
+         }
+     }
+ });
+
+ // -------------------- Toast --------------------
+ function showToast(msg){
+     const c=document.getElementById('toastContainer');
+     const d=document.createElement('div');
+     Object.assign(d.style,{
+         background:"rgba(0,0,0,0.8)", color:"#fff", padding:"10px 16px",
+         borderRadius:"8px", marginTop:"8px", opacity:"0", transform:"translateY(-20px)",
+         transition:"0.3s"
+     });
+     d.textContent=msg; c.appendChild(d);
+     requestAnimationFrame(()=>{d.style.opacity="1"; d.style.transform="translateY(0)";});
+     setTimeout(()=>{ d.style.opacity="0"; setTimeout(()=>c.removeChild(d),300); },2000);
+ }
+
+ // 初始化加载
+ window.onload=loadMedia;
+</script>
+</body>
+</html>

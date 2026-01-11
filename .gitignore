@@ -1,0 +1,34 @@
+# roject exclude paths
+*.mp3
+*.mp4
+*.flac
+*.wav
+.thumbnails.bundle/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA ###
+*.iws
+*.iml
+*.ipr
+
+# 忽略文件夹
+.idea
+target/
+upload/
+
+
+### personal config ###
+*.log
+*.bak
+
+
+
+log/
+readme/personal/
+
+*.DS_Store
+
+
+nas.iml
+
+

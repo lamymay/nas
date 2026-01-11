@@ -1,0 +1,81 @@
+server:
+  servlet:
+    context-path: /nas
+  port: 9000
+
+spring:
+  # 进行该配置，你就可以通过YOUR_URL/h2访问h2 web console 是你程序的访问URl。默认为/h2-console #开启该配置后，h2 web console 就可以在远程访问了。否则只能在本机访问。
+  h2:
+    console:
+      enabled: true
+      path: /h2
+      settings:
+        web-allow-others: true
+  datasource:
+    db1:
+      driver-class-name: org.h2.Driver
+      url: jdbc:h2:file:./data/db/h2/h2_db
+      username: root
+      password: root#1234
+  application:
+    name: nas
+  profiles:
+    active: local
+  servlet:
+    multipart:
+      max-file-size: 102400MB
+      max-request-size: 102400MB
+  resources:
+    add-mappings: true
+    static-locations: classpath:/static/,classpath:/templates/index,classpath:/META-INF/resources,classpath:/META-INF/resources/webjars/,classpath:/public/
+  mvc:
+    throw-exception-if-no-handler-found: true
+    static-path-pattern: /**
+  thymeleaf:
+    cache: true
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML5
+    encoding: UTF-8
+
+#################################################################
+#     非Spring自动配置相关的配置(自定义配置) START
+#################################################################
+#配置日志,日志用xml去配置
+log:
+  dir: ./log
+
+arc:
+  system:
+    initial: true
+  file:
+    upload:
+      path: ./data/upload
+  switch:
+    enableSettingSuccessNoticeAsync: true
+    enableAppContactSyncLog: true
+  app:
+    test:
+      #      url1: http://hello.com/?message=测试仅仅yaml中配置,java中无默认值&key=%s
+      #      url1:
+      url3: http://hello.com/?message=配置文件中注入的boolean-''-    -""-&key=%s
+  security:
+    user2: "user2YML配置"
+
+
+config:
+  program:
+    jobMaxProcessTimes: 1000
+    jobSingleProcessCostMillisecond: 59999
+
+
+
+# 自定义参数；说明 1、web.system.initial:是否在系统启动的时候初始化一些操作
+web:
+  upload:
+    file: /
+  system:
+    initial: true
+
+######非Spring自动配置相关的配置(自定义配置) END#################
+

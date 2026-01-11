@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.arc.nas.repository.mysql.mapper.system.SysFileMapper">
+
+    <!-- 查询文件，支持媒体类型过滤、标签过滤、仅未打标签 -->
+    <select id="listFilesByMediaTypesAndTags"
+            parameterType="com.arc.nas.model.request.app.media.SysFileQuery"
+            resultType="com.arc.nas.model.domain.system.common.SysFile">
+        SELECT f.*
+        FROM sys_file f
+        WHERE 1=1
+
+        <!-- 媒体类型过滤 -->
+        <if test="mediaTypes != null and mediaTypes.size() > 0">
+            AND f.media_type IN
+            <foreach collection="mediaTypes" item="type" open="(" separator="," close=")">
+                #{type}
+            </foreach>
+        </if>
+
+        <!-- 指定标签过滤：只返回有某些标签的文件 -->
+        <if test="tagCodes != null and tagCodes.size() > 0">
+            AND EXISTS (
+            SELECT 1
+            FROM media_file_tag_relation r
+            WHERE r.file_code = f.code
+            AND r.tag_code IN
+            <foreach collection="tagCodes" item="tag" open="(" separator="," close=")">
+                #{tag}
+            </foreach>
+            )
+        </if>
+
+        <!-- 仅返回未打任何标签的文件 -->
+        <if test="onlyUntagged == true">
+            AND NOT EXISTS (
+            SELECT 1
+            FROM media_file_tag_relation r
+            WHERE r.file_code = f.code
+            )
+        </if>
+    </select>
+
+    <select id="listPageByQuery"
+            parameterType="com.arc.nas.model.request.app.media.SysFilePageable"
+            resultType="com.arc.nas.model.domain.system.common.SysFile">
+
+        SELECT *
+        FROM sys_file
+        WHERE 1 = 1
+
+        <if test="keyword != null and keyword.trim() != ''">
+            AND display_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+
+        <if test="mediaType != null and mediaType.trim() != ''">
+            AND media_type = #{mediaType}
+        </if>
+
+        <!-- ====== 动态排序（字段 + 方向） ====== -->
+        <choose>
+            <when test="orderField == 'createTime'">
+                ORDER BY create_time
+            </when>
+            <when test="orderField == 'updateTime'">
+                ORDER BY update_time
+            </when>
+            <otherwise>
+                ORDER BY id   <!-- 默认排序 -->
+            </otherwise>
+        </choose>
+
+        <choose>
+            <when test="orderDirection == 'asc'">
+                ASC
+            </when>
+            <otherwise>
+                DESC   <!-- 默认 -->
+            </otherwise>
+        </choose>
+
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+
+    <!-- 清空表 -->
+    <update id="truncate">
+        truncate table ${tableName}
+    </update>
+
+</mapper>
