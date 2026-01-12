@@ -25,6 +25,11 @@ public class GenerateThumbnailConfig {
     private boolean overwrite = false;
 
     /**
+     *
+     */
+    private boolean enableUseShareIndex = false;
+
+    /**
      * 以字节为单位 = 5MB
      */
     private Long imageSkipSize = (long) 5 * 1024 * 1024;
@@ -75,5 +80,13 @@ public class GenerateThumbnailConfig {
 
     public void setImageSkipSize(Long imageSkipSize) {
         this.imageSkipSize = imageSkipSize;
+    }
+
+    public boolean isEnableUseShareIndex() {
+        return enableUseShareIndex;
+    }
+
+    public void setEnableUseShareIndex(boolean enableUseShareIndex) {
+        this.enableUseShareIndex = enableUseShareIndex;
     }
 }

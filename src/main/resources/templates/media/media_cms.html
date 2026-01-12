@@ -140,7 +140,7 @@
             <button data-type="OTHERS" onclick="toggleMediaType(this)" type="button">OTHERS</button>
         </div>
 
-        <input id="searchKeyword" placeholder="搜索媒体关键字" type="text"/>
+        <input id="searchKeyword" placeholder="关键字" type="text"/>
         <button onclick="loadMedia()">搜索媒体</button>
     </div>
     <button onclick="toggleSettings(true)" style="background: #666; border-color: #666;">系统设置</button>
@@ -157,13 +157,14 @@
         <div>
             <div>
                 <h4>扫描路径配置 (每行一个路径)</h4>
-                <button onclick="saveAllPaths()" style="background: #28a745; border-color: #28a745;">
-                    保存扫描路径(系统延迟自动更新媒体库)
-                </button>
+
             </div>
             <textarea id="pathsTextarea"
                       placeholder="请输入绝对路径，例如：&#10;D:\Media\Movies&#10;E:\Photos"></textarea>
             <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+                <button onclick="saveAllPaths()" style="background: #28a745; border-color: #28a745;">
+                    保存扫描路径(系统延迟自动更新媒体库)
+                </button>
                 <button onclick="toggleSettings(false)" style="background: #eee; border-color: #ccc; color: #333;">
                     关闭
                 </button>

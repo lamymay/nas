@@ -361,6 +361,7 @@ public class FileUtil {
     }
 
     public static boolean deleteFile(File file) {
+        log.info("删除文件file={}", file);
 
         // 如果文件路径所对应的文件存在，并且是一个文件，则直接删除
         if (!file.exists()) {

@@ -55,8 +55,6 @@ public interface SysFileDAO {
 
     long countByStatus(Integer status);
 
-    List<SysFile> getByHash(String hash);
-
     SysFile getByHashAndName(String sha256Hash, String name);
 
     List<SysFile> listAllByMediaType(String mediaType);
@@ -70,6 +68,8 @@ public interface SysFileDAO {
     List<SysFile> listFilesByMediaTypesAndTags(SysFileQuery query);
 
     List<SysFile> listByCode(String code);
+
+    List<SysFile> listByHash(String hash);
 }
 
 //

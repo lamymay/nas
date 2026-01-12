@@ -1,5 +1,6 @@
 package com.arc.nas.init;
 
+import com.arc.util.file.FileUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -7,6 +8,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.arc.nas.init.GetLocalIPAddress.localNetAddress;
+import static org.springframework.util.StringUtils.cleanPath;
 
 /**
  * 初始化相关操作
@@ -83,5 +85,11 @@ public class ReadyResourceInit {
         ReadyResourceInit.writeableDirectory = writeableDirectory;
     }
 
+    public final static String thumbnailsDefaultFolderName = ".thumbnails.bundle";
 
+    public final static File getThumbnailRoot() {
+        File file = new File(".", thumbnailsDefaultFolderName);
+        String cleanPath = cleanPath(file.getAbsolutePath());
+        return FileUtil.requireFileDirectoryExistsOrElseTryCreate(new File(cleanPath));
+    }
 }

@@ -130,7 +130,7 @@ public class SysFileDAOImpl extends ServiceImpl<SysFileMapper, SysFile> implemen
     }
 
     @Override
-    public List<SysFile> getByHash(String hash) {
+    public List<SysFile> listByHash(String hash) {
         return this.lambdaQuery().eq(hash != null, SysFile::getHash, hash).select().list();
     }
 
@@ -138,7 +138,6 @@ public class SysFileDAOImpl extends ServiceImpl<SysFileMapper, SysFile> implemen
     public List<SysFile> listAllByMediaType(String mediaType) {
         return this.lambdaQuery().eq(mediaType != null, SysFile::getMediaType, mediaType).select().list();
     }
-
 
     @Override
     public List<SysFile> listAllByCodes(Set<String> codes) {

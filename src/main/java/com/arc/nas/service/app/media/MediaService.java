@@ -14,7 +14,6 @@ public interface MediaService {
 
     MediaPageDTO listPage(SysFilePageable pageable);
 
-
     MediaItemDTO getByIdOrCode(String code);
 
     BatchResult addTag(AddTagRequest addTagRequest);

@@ -116,6 +116,64 @@ public class FFmpegThumbnailGenerator {
         return thumbnails;
     }
 
+    public static List<File> generateVideoThumbnailsSync(String inputVideoFile, String outputFolder,
+                                                         List<String> timePoints, int width,
+                                                         boolean overwrite) {
+        File outputDir = new File(outputFolder);
+        File videoFile = new File(inputVideoFile);
+        if (!outputDir.exists()) outputDir.mkdirs();
+
+        String baseName = videoFile.getName();
+        if (baseName.contains(".")) {
+            baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+        }
+
+        List<File> thumbnails = new ArrayList<>();
+
+        for (String timePoint : timePoints) {
+            String timeStr = formatTimeForFilename(timePoint);
+            int seq = 1;
+            File thumbFile;
+            // 确定输出路径
+            do {
+                thumbFile = new File(outputDir, String.format("%s_%s_%02d.jpg", baseName, timeStr, seq++));
+            } while (!overwrite && thumbFile.exists());
+
+            // 构造 FFmpeg 命令
+            List<String> command = new ArrayList<>();
+            command.add("ffmpeg");
+            command.add("-ss");
+            command.add(timePoint);
+            command.add("-i");
+            command.add(videoFile.getAbsolutePath());
+            command.add("-vframes");
+            command.add("1");
+            command.add("-q:v");
+            command.add("2");
+            command.add("-vf");
+            command.add("scale=" + width + ":-1,format=yuvj420p");
+            command.add(thumbFile.getAbsolutePath());
+            command.add("-y");
+
+            try {
+                // 1. 同步执行：executeCommand 内部必须调用了 process.waitFor()
+                executeCommand(command);
+
+                // 2. 校验文件：只有文件物理存在且大小大于 0，才认为生成成功
+                if (thumbFile.exists() && thumbFile.length() > 0) {
+                    thumbnails.add(thumbFile);
+                } else {
+                    log.error("FFmpeg 执行结束，但未检测到生成的缩略图文件: {}", thumbFile.getAbsolutePath());
+                }
+            } catch (Exception e) {
+                log.error("生成缩略图异常，输入视频: " + inputVideoFile, e);
+            }
+        }
+
+        // 只有真正成功生成的文件才会被返回，后续计算 Hash 就不需要 retry 循环了
+        return thumbnails;
+    }
+
     /**
      * 对图片生成缩略图并转换格式
      */

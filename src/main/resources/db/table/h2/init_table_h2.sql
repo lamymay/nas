@@ -1,3 +1,4 @@
+--drop table  IF  EXISTS sys_key_value;
 --drop table  IF  EXISTS sys_file;
 --drop table  IF  EXISTS media_tag;
 --drop table  IF  EXISTS media_file_tag_relation;
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS sys_file (
 
     storage_type VARCHAR(16),             -- LOCAL / OSS / NAS
     path VARCHAR(2048) NOT NULL,          -- 存储路径（本地绝对路径或 OSS key）
-    thumbnail VARCHAR(1024) ,          -- 缩略图code
+    thumbnail VARCHAR(2048) ,          -- 缩略图code
 
     length BIGINT NOT NULL,               -- 文件大小（byte）
     version INT NOT NULL,                 -- 文件版本

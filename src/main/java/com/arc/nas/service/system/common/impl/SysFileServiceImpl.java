@@ -80,26 +80,26 @@ public class SysFileServiceImpl implements SysFileService {
         return byteCount;
     }
 
-    @Override
-    public Long save(SysFile sysFile) {
-        String sha256 = FileSameCheckTool.calculateHashSHA256(new File(sysFile.getPath()));
-        SysFile exist = getByIdOrCode(sha256);
-        if (exist != null) {
-            //  存在相同的文件了
-            return exist.getId();
-        }
-
-        if (sysFile.getCode() == null || sysFile.getCode().trim().isEmpty()) {
-            log.warn(" 异常   sysFile.getCode() == nul");
-            sysFile.setCode(sha256);
-        }
-        if (sysFile.getHash() == null) {
-            sysFile.setHash(sha256);
-        }
-
-        SysFile saveOne = sysFileDAO.saveOne(sysFile);
-        return saveOne == null ? null : saveOne.getId();
-    }
+//    @Override
+//    public Long save(SysFile sysFile) {
+//        String sha256 = FileSameCheckTool.calculateHashSHA256(new File(sysFile.getPath()));
+//        SysFile exist = getByIdOrCode(sha256);
+//        if (exist != null) {
+//            //  存在相同的文件了
+//            return exist.getId();
+//        }
+//
+//        if (sysFile.getCode() == null || sysFile.getCode().trim().isEmpty()) {
+//            log.warn(" 异常   sysFile.getCode() == nul");
+//            sysFile.setCode(sha256);
+//        }
+//        if (sysFile.getHash() == null) {
+//            sysFile.setHash(sha256);
+//        }
+//
+//        SysFile saveOne = sysFileDAO.saveOne(sysFile);
+//        return saveOne == null ? null : saveOne.getId();
+//    }
 
     private void setCommon(SysFile sysFile) {
         if (sysFile != null) {
@@ -110,7 +110,7 @@ public class SysFileServiceImpl implements SysFileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Boolean deleteById(Long id) {
+    public boolean deleteById(Long id) {
         SysFile existFileIndex = sysFileDAO.getById(id);
         if (existFileIndex == null) {
             throw new RuntimeException("删除的文件不存在");
@@ -257,6 +257,11 @@ public class SysFileServiceImpl implements SysFileService {
         return sysFileDAO.listByCode(code);
     }
 
+    @Override
+    public List<SysFile> listByHash(String hash) {
+        return sysFileDAO.listByCode(hash);
+    }
+
     /**
      * 文件持久化并在数据库做记录
      * 注意文件名称保证不相同，不存在重复文件覆盖问题，同时带来一个问题，前端相同文件重复上传造成服务端资源浪费，建议用定时线程去清理无效的重复文件
@@ -307,13 +312,12 @@ public class SysFileServiceImpl implements SysFileService {
                 diskFile.deleteOnExit();
                 return existFileIndex;
             } else {
-
                 // hash「不相同」 且是「大」文件， 之前已经写盘了，此时不必再次写盘
 
                 // 并创建文件索引信息
                 SysFile sysFile = createSysFile(multipartFile, diskFile);
                 sysFile.setVersion(1);
-                this.save(sysFile);
+                sysFileDAO.saveOne(sysFile);
                 return sysFile;
             }
         } catch (IOException exception) {
@@ -362,7 +366,7 @@ public class SysFileServiceImpl implements SysFileService {
                 // 并创建文件索引信息
                 SysFile sysFile = createSysFile(multipartFile, diskFile);
                 sysFile.setVersion(1);
-                this.save(sysFile);
+                sysFileDAO.saveOne(sysFile);
                 return sysFile;
 
             }
@@ -418,21 +422,21 @@ public class SysFileServiceImpl implements SysFileService {
         log.info("文件SysFile={},路径={}删除={}", JSON.toJSONString(sysFile), sysFile.getPath(), (delete ? "成功" : "失败"));
     }
 
-    @Override
-    public boolean saveAll(List<SysFile> files) {
-        files.stream()
-                .peek(sysFile -> {
-                    if (sysFile.getCode() == null || sysFile.getCode().trim().isEmpty()) {
-                        sysFile.setCode(FileSameCheckTool.calculateHashSHA256(new File(sysFile.getPath())));
-                    }
-                    if (sysFile.getHash() == null) {
-                        setCommon(sysFile);
-                    }
-                });
-//                .collect(Collectors.toList());// collect 可以不用，peek 本身已经修改了原对象
-        return sysFileDAO.saveAll(files);
-
-    }
+//    @Override
+//    public boolean saveAll(List<SysFile> files) {
+//        files.stream()
+//                .peek(sysFile -> {
+//                    if (sysFile.getCode() == null || sysFile.getCode().trim().isEmpty()) {
+//                        sysFile.setCode(FileSameCheckTool.calculateHashSHA256(new File(sysFile.getPath())));
+//                    }
+//                    if (sysFile.getHash() == null) {
+//                        setCommon(sysFile);
+//                    }
+//                });
+////                .collect(Collectors.toList());// collect 可以不用，peek 本身已经修改了原对象
+//        return sysFileDAO.saveAll(files);
+//
+//    }
 
     @Override
     public SysFile getByIdOrCode(Object idOrCode) {

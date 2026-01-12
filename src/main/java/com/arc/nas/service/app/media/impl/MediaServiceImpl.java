@@ -7,18 +7,16 @@ import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.dto.app.media.MediaPageDTO;
 import com.arc.nas.model.request.app.media.*;
 import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
-import com.arc.nas.service.app.media.MediaResource;
 import com.arc.nas.service.app.media.MediaService;
 import com.arc.nas.service.system.common.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.Assert;
+import com.arc.util.CodeUtil;
 import com.arc.util.JSON;
 import com.arc.util.StringTool;
 import com.arc.util.file.FileSameCheckTool;
 import com.arc.util.file.FileUtil;
 import com.arc.util.file.Platform;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -27,51 +25,50 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.arc.nas.model.domain.system.common.SysFile.createSysFile;
+import static com.arc.nas.init.ReadyResourceInit.getThumbnailRoot;
+import static com.arc.nas.init.ReadyResourceInit.thumbnailsDefaultFolderName;
 import static com.arc.nas.model.domain.system.common.SysFile.createSysFileSimple;
 import static com.arc.nas.service.system.common.SysFileService.*;
 import static com.arc.util.file.FFmpegThumbnailGenerator.generateImageThumbnail;
-import static com.arc.util.file.FFmpegThumbnailGenerator.generateVideoThumbnails;
+import static com.arc.util.file.FFmpegThumbnailGenerator.generateVideoThumbnailsSync;
+import static org.springframework.util.StringUtils.cleanPath;
 
 @Service
 public class MediaServiceImpl implements MediaService {
 
     public final static String nomedia = ".nomedia";
     public final static String ignore = ".ignore";
-    final static String thumbnailsDefaultFolderName = ".thumbnails.bundle";
     final static String userHome = System.getProperty("user.home");
     private static final Logger log = LoggerFactory.getLogger(MediaServiceImpl.class);
+    // todo cancelTask
+    public static boolean cancelTask = false;
     private final SysFileService fileService;
     private final SysFileDAO sysFileDAO;
     private final FileTagRelationDAO fileTagRelationDAO;
     private final UrlHelper urlHelper;
-    private final MediaResource mediaResource;
-    private final ListeningExecutorService executor;
-    ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2);
+
+    //private final ListeningExecutorService executor;
+
+    //ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2);
 
 
     public MediaServiceImpl(SysFileService fileService, SysFileDAO sysFileDAO, FileTagRelationDAO fileTagRelationDAO,
-                            UrlHelper urlHelper,
-                            MediaResource mediaResource) {
+                            UrlHelper urlHelper) {
         this.fileService = fileService;
         this.sysFileDAO = sysFileDAO;
         this.fileTagRelationDAO = fileTagRelationDAO;
         this.urlHelper = urlHelper;
-        this.mediaResource = mediaResource;
         // 创建 Guava ListeningExecutorService，线程池大小 = CPU 核数
-        this.executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+        //this.executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
     }
 
     @Override
     public Integer scan(String... folders) {
         log.info("开始扫描同步, 参数={}", JSON.toJSONString(folders));
-        if (folders == null ) return 0;
-
+        if (folders == null) return 0;
         // 1. 扫描磁盘：获取当前所有文件的最新状态
         List<File> allDiskFiles = new ArrayList<>();
         HashSet<String> ignoreFile = new HashSet<>();
@@ -82,16 +79,12 @@ public class MediaServiceImpl implements MediaService {
             List<File> tmp = FileUtil.listFileByDir(folder, ignoreFile);
             if (tmp != null) allDiskFiles.addAll(tmp);
         }
-
-        String thumbnailRootFolder = getThumbnailRoot().getAbsolutePath();
+        String thumbnailRootFolder = cleanPath(getThumbnailRoot().getAbsolutePath());
         List<File> tmpThumbnail = FileUtil.listFileByDir(thumbnailRootFolder, ignoreFile);
         if (tmpThumbnail != null) allDiskFiles.addAll(tmpThumbnail);
-
-
         // 将磁盘文件转为 Map，Key 为绝对路径，方便快速比对
         Map<String, File> diskPathMap = allDiskFiles.stream()
                 .collect(Collectors.toMap(File::getAbsolutePath, f -> f, (o, n) -> n));
-
         // 2. 获取数据库索引
         List<SysFile> index = sysFileDAO.listAll();
         Map<String, SysFile> indexPathMap = index.stream()
@@ -132,7 +125,6 @@ public class MediaServiceImpl implements MediaService {
             }
         }
 
-
         // 5. 执行数据库操作
         if (!toDelete.isEmpty()) {
             log.info("扫描-toDelete-清理失效索引: {} 条", toDelete.size());
@@ -170,10 +162,17 @@ public class MediaServiceImpl implements MediaService {
             }
 
             if (path != null) {
-                String hashSHA256 = FileSameCheckTool.calculateHashSHA256(new File(path));
-                sysFile.setCode(hashSHA256);
-                sysFile.setHash(hashSHA256);
-                sysFile.setTaskStatus("HASH_DONE");
+
+                try {
+                    String cleanPath = cleanPath(path);
+                    log.info("path-->cleanPath {}-->{}", path, cleanPath);
+                    String hashSHA256 = FileSameCheckTool.calculateHashSHA256(new File(cleanPath));
+                    sysFile.setHash(hashSHA256);
+                    sysFile.setTaskStatus("HASH_DONE");
+                } catch (Exception exception) {
+                    sysFile.setTaskStatus("FAILED");
+                    sysFile.setRemark(exception.getMessage());
+                }
                 sysFileDAO.update(sysFile);
 
             }
@@ -192,10 +191,19 @@ public class MediaServiceImpl implements MediaService {
                     for (String thumbnailFileCode : thumbnail.split(",")) {
                         thumbnailFileCode = thumbnailFileCode.trim();
                         SysFile thumbnailFile = fileService.getByIdOrCode(thumbnailFileCode);
-                        if (thumbnailFile != null && thumbnailFile.getPath() != null) {
-                            FileUtil.deleteFile(thumbnailFile.getPath());
+                        if (thumbnailFile == null || thumbnailFile.getPath() == null) continue;
+                        File file = new File(cleanPath(thumbnailFile.getPath()));
+                        if (file.exists()) {
+                            try {
+                                boolean deleted = FileUtil.deleteFile(file);
+                                if (!deleted) {
+                                    log.error("error 文件删除失败 file=" + file);
+                                }
+                            } catch (Exception exception) {
+                                log.error("error 文件删除失败 file=" + file, exception);
+                            }
                         }
-                        fileService.deleteByCode(thumbnailFileCode);
+                        sysFileDAO.deleteById(thumbnailFile.getId());
                     }
                 }
                 boolean deleted = false;
@@ -216,10 +224,6 @@ public class MediaServiceImpl implements MediaService {
             log.info("删除文件索引 null");
         }
     }
-
-
-    // 延迟执行 计算hash 缩略图
-    // scheduledExecutor.schedule(() -> matchAndGenerateThumbnailsInner(), 5, TimeUnit.SECONDS);
 
 
     /**
@@ -338,24 +342,6 @@ public class MediaServiceImpl implements MediaService {
         BatchResult result = new BatchResult(true);
         result.setMessage("success count =" + recordsToAdd.size() + "fail count=" + (addTagRequest.getFileCodes().size() - recordsToAdd.size()));
         return result;
-//        BatchResult result = new BatchResult();
-//        List<BatchItemResult> items = addTagRequest.getFileCodes().stream()
-//                .map(fileCode -> {
-//                    boolean added = !existingFileCodes.contains(fileCode);
-//                    if (added) {
-//                        FileTagRelation r = new FileTagRelation();
-//                        r.setFileCode(fileCode);
-//                        r.setTagCode(addTagRequest.getTagCode());
-//                        fileTagRelationDAO.save(r);
-//                    }
-//                    return new BatchItemResult(added, added ? "成功" : "已存在");
-//                })
-//                .collect(Collectors.toList());
-//        result.setSuccess(true);
-//        result.setContent(items);
-//        result.setMessage("处理完成");
-//        return result;
-
     }
 
     @Override
@@ -426,6 +412,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     public CleanThumbnailsResult cleanThumbnails(boolean moveToTrash) {
+        log.info("cleanThumbnails moveToTrash={}",moveToTrash);
         List<SysFile> thumbnails = sysFileDAO.listAllByMediaType(THUMBNAIL);
         if (thumbnails == null) {
             return CleanThumbnailsResult.ok();
@@ -467,72 +454,80 @@ public class MediaServiceImpl implements MediaService {
 
     }
 
-    private File getThumbnailRoot() {
-        return FileUtil.requireFileDirectoryExistsOrElseTryCreate(new File(".", thumbnailsDefaultFolderName));
-    }
-
-    private GenerateThumbnailItemResult generateThumbnailsVideo(GenerateThumbnailConfig config) {
-        // 1 查询db中的全部视频
-        List<SysFile> videos = sysFileDAO.listAllByMediaType(VIDEO);
-        GenerateThumbnailItemResult result = new GenerateThumbnailItemResult();
-        if (videos == null || videos.isEmpty()) {
-            return result;
+    // db中但是不是缩略图文件夹中的图片则依然需要重新保存吗？ 节约磁盘的目的是不需要再次保存的<采用此方案>
+    private Set<String> generateAndSaveThumbnails(SysFile video, GenerateThumbnailConfig config) {
+        final Set<String> thumbnailCodes = new HashSet<>();
+        if (video.getThumbnail() != null) {
+            Set<String> existThumbnailCodes = Arrays.stream(video.getThumbnail().split(",")).collect(Collectors.toSet());
+            if (existThumbnailCodes != null && !existThumbnailCodes.isEmpty())
+                thumbnailCodes.addAll(existThumbnailCodes);
         }
-        result.setTotal(videos.size());
-        List<SysFile> updateAll = new LinkedList<>();
-        // ffmpeg 去处理视频得到截图
-        for (SysFile video : videos) {
-            if (video == null) continue;
-            boolean doThumbnails = StringTool.isBlank(video.getThumbnail());
-            if (doThumbnails || config.isForce()) {
-                List<File> files = generateVideoThumbnails(video.getPath(), config.getThumbnailRoot(), Arrays.asList("00:00:05.000", "00:01:00.000"), config.getWidth(), config.isOverwrite());
-                List<SysFile> collect = files.stream()
-                        .filter(File::exists)
-                        .map(file -> SysFile.createSysFile(file, THUMBNAIL, "thumbnail"))
-                        .filter(item -> !indexDbExistSameThumbnails(item.getCode()))//
-                        .collect(Collectors.toList());
-                if (collect == null || collect.isEmpty()) {
-                    continue;
-                }
-                for (SysFile sysFile : collect) {
-                    sysFile.setTaskStatus("END");
-                }
-                boolean saveAll = fileService.saveAll(collect);
-                if (saveAll) {
-                    final Set<String> thumbnailCodes;
-                    if (video.getThumbnail() != null) {
-                        thumbnailCodes = Arrays.stream(video.getThumbnail().split(",")).collect(Collectors.toSet());
+        String thumbnailRoot = cleanPath(config.getThumbnailRoot());
+        List<File> thumbnailLocalFiles = generateVideoThumbnailsSync(video.getPath(), thumbnailRoot, List.of("00:01:00.000"), config.getWidth(), config.isOverwrite());
+        if (thumbnailLocalFiles == null || thumbnailLocalFiles.isEmpty()) {
+            log.error("缩略图生成失败，video={}", video.getPath());
+//            FileUtil.moveFile(new File(video.getPath()), new File("/Users/may/Desktop/test2"), 1, true);
+            return thumbnailCodes;
+        }
+        // 迭代每一个缩略图
+        for (File thumbnailLocalFile : thumbnailLocalFiles) {
+//            int retry = 0;
+//            while (!thumbnailLocalFile.exists() && retry++ < 100) {
+//                try {
+//                    Thread.sleep(5);
+//                } catch (InterruptedException ignored) {
+//                    log.error("Error Thread.sleep");
+//                }
+//            }
+            log.info("缩略图file({})exist={}", thumbnailLocalFile.getAbsolutePath(), thumbnailLocalFile.exists());
+            String hash = null;
+            try {
+                hash = FileSameCheckTool.calculateHashSHA256(thumbnailLocalFile);// 计算 SHA-256
+                SysFile thumbnailIndexPending = createSysFileSimple(thumbnailLocalFile, "END");
+                thumbnailIndexPending.setMediaType("THUMBNAIL");
+                thumbnailIndexPending.setHash(hash);
+                thumbnailIndexPending.setCode(CodeUtil.createCode16());
+                List<SysFile> existThumbnailIndex = fileService.listByHash(hash);
+                if (existThumbnailIndex == null || existThumbnailIndex.isEmpty()) {
+                    // insert
+                    thumbnailCodes.add(thumbnailIndexPending.getCode());
+                    sysFileDAO.saveOne(thumbnailIndexPending);
+                } else {
+                    if (config.isEnableUseShareIndex()) {
+                        String inThumbnailsFolderCode = null;
+                        for (SysFile index : existThumbnailIndex) {
+                            if (index == null || index.getPath() == null) continue;
+                            if (index.getPath().contains(thumbnailsDefaultFolderName)) {
+                                inThumbnailsFolderCode = index.getCode();
+                                break;
+                            }
+                        }
+                        if (inThumbnailsFolderCode == null) {
+                            thumbnailCodes.add(existThumbnailIndex.get(0).getCode());
+                        } else {
+                            thumbnailCodes.add(inThumbnailsFolderCode);
+                        }
                     } else {
-                        thumbnailCodes = new HashSet<>();
+                        thumbnailCodes.add(thumbnailIndexPending.getCode());
+                        sysFileDAO.saveOne(thumbnailIndexPending);
                     }
-
-                    Set<String> thumbnails = collect.stream().map(item -> item.getCode()).collect(Collectors.toSet());
-                    thumbnailCodes.addAll(thumbnails);
-
-                    video.setThumbnail(String.join(",", thumbnailCodes));
-                    video.setTaskStatus("END");
-                    updateAll.add(video);
+                }
+            } catch (Exception exception) {
+                log.error(String.format("error 单个缩略图 维护异常,\nhash=%s\nvideo=%s \nthumbnailLocalFile=%s",
+                        hash, video, thumbnailLocalFile.getAbsolutePath()), exception);
+                try {
+                    if (thumbnailLocalFile.exists()) {
+                        FileUtil.deleteFile(thumbnailLocalFile);
+                    }
+                } catch (Exception ex) {
+                    log.error(String.format("error 维护异常时候，删除临时的缩略图，删除异常,\nvideo=%s \nthumbnailLocalFile=%s",
+                            video, thumbnailLocalFile.getAbsolutePath()), ex);
                 }
             }
         }
-        if (!updateAll.isEmpty()) sysFileDAO.updateAll(updateAll);
-        return result;
+        return thumbnailCodes;
     }
 
-    private boolean indexDbExistSameThumbnails(String code) {
-
-        List<SysFile> existRecords = fileService.listByCode(code);
-        if (existRecords == null || existRecords.isEmpty()) {
-            return false;
-        } else {
-            for (SysFile existRecord : existRecords) {
-                if ((String.valueOf(existRecord.getPath())).contains(thumbnailsDefaultFolderName)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     private GenerateThumbnailItemResult generateThumbnailsImage(GenerateThumbnailConfig config) {
         List<SysFile> fileList = sysFileDAO.listAllByMediaType("IMAGE");
@@ -551,17 +546,16 @@ public class MediaServiceImpl implements MediaService {
             }
 
             if (doThumbnails || config.isForce()) {
-
                 File imageThumbnail = generateImageThumbnail(new File(file.getPath()), new File(config.getThumbnailRoot()), config.getWidth(), config.isOverwrite(), "jpg");
-                SysFile imageThumbnailSysFile = createSysFile(imageThumbnail, THUMBNAIL, "thumbnail");
+                SysFile imageThumbnailSysFile = createSysFileSimple(new File(cleanPath(imageThumbnail.getPath())), "END");
                 MediaItemDTO byIdOrCode = getByIdOrCode(imageThumbnailSysFile.getCode());
                 if (byIdOrCode != null) {
                     //  存在相同的文件了
                     continue;
                 }
                 imageThumbnailSysFile.setTaskStatus("END");
-                Long save = fileService.save(imageThumbnailSysFile);
-                if (save != null) {
+                SysFile saved = sysFileDAO.saveOne(imageThumbnailSysFile);
+                if (saved.getId() != null) {
                     final Set<String> thumbnailCodes;
                     if (file.getThumbnail() != null) {
                         thumbnailCodes = Arrays.stream(file.getThumbnail().split(",")).collect(Collectors.toSet());
@@ -581,5 +575,81 @@ public class MediaServiceImpl implements MediaService {
         return result;
     }
 
+
+    private GenerateThumbnailItemResult generateThumbnailsVideo(GenerateThumbnailConfig config) {
+        // 1 查询db中的全部视频
+        List<SysFile> videos = sysFileDAO.listAllByMediaType(VIDEO);
+        GenerateThumbnailItemResult result = new GenerateThumbnailItemResult();
+        if (videos == null || videos.isEmpty()) {
+            return result;
+        }
+
+        // ffmpeg 去处理视频得到截图
+        int updated = 0;
+        for (SysFile video : videos) {
+            if (video == null) continue;
+            if (config.isForce()) {
+                video.setThumbnail(mergeThumbnail(null, generateAndSaveThumbnails(video, config)));
+                video.setTaskStatus("END");
+                sysFileDAO.update(video);
+                updated = updated + 1;
+            } else {
+                // 非强制生成缩略图
+                String thumbnailStr = video.getThumbnail();
+                boolean doThumbnailStr = StringTool.isBlank(thumbnailStr);
+                checkAndLogTooManyThumbnails(video);
+
+                if (doThumbnailStr) {
+                    Set<String> thumbnailCodes = generateAndSaveThumbnails(video, config);
+                    video.setThumbnail(mergeThumbnail(thumbnailStr, thumbnailCodes));
+                    video.setTaskStatus("END");
+                    sysFileDAO.update(video);
+                    updated = updated + 1;
+                }
+            }
+        }
+        result.setTotal(videos.size());
+        result.setUpdateCount(updated);
+        return result;
+    }
+
+    private void checkAndLogTooManyThumbnails(SysFile sysFile) {
+        String thumbnailStr = sysFile.getThumbnail();
+        if (!StringTool.isBlank(thumbnailStr)) {
+            Set<String> existThumbnailSet = Arrays.stream((thumbnailStr).split(","))
+                    .map(String::trim)                 // 去除每个 code 的前后空格
+                    .filter(s -> !s.isEmpty())          // 过滤掉空字符串
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (existThumbnailSet.size() >= 20) {
+                log.error("error 单个媒体文件过多缩略图（超过20个）！sysFile=" + JSON.toJSONString(sysFile));
+            }
+        }
+    }
+
+    private String mergeThumbnail(String thumbnailStr, Set<String> thumbnailCodes) {
+        // 1. 处理 thumbnailCodes 为空的情况
+        if (thumbnailCodes == null || thumbnailCodes.isEmpty()) {
+            return StringTool.isBlank(thumbnailStr) ? null : thumbnailStr;
+        }
+
+        // 2. 处理 thumbnailStr 为空的情况
+        if (StringTool.isBlank(thumbnailStr)) {
+            return String.join(",", thumbnailCodes);
+        }
+        // 3. 合并逻辑：使用 LinkedHashSet 可以保留一定的原始顺序（可选）
+        Set<String> mergedSet = Arrays.stream(thumbnailStr.split(","))
+                .map(String::trim)                 // 去除每个 code 的前后空格
+                .filter(s -> !s.isEmpty())          // 过滤掉空字符串
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        mergedSet.addAll(thumbnailCodes);
+
+        return String.join(",", mergedSet);
+    }
+
+    public String convertToString(Set<String> set) {
+        if (set == null || set.isEmpty()) return null;
+        return String.join(",", set);
+    }
 
 }

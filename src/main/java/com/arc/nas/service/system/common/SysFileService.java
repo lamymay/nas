@@ -21,25 +21,24 @@ import java.util.Map;
  */
 public interface SysFileService {
 
-    //String mediaType;//  业务分类：视频/音频/图片  类型 文件还是图片 VIDEO/IMAGE/FILE/THUMBNAIL  一般来说图片是可以直接预览的,
     String VIDEO = "VIDEO";
     String IMAGE = "IMAGE";
     String FILE = "FILE";
     String THUMBNAIL = "THUMBNAIL";
 
-    Long save(SysFile sysFile);
+//    @Deprecated Long save(SysFile sysFile);
+//    boolean saveAll(List<SysFile> files);
 
-    // 删除index & 文件系统中的文件
-    Boolean deleteById(Long id);
+    /**
+     *  删除index & 文件系统中的文件
+     * @param id id
+     * @return Boolean
+     */
+    boolean deleteById(Long id);
 
     Boolean deleteByCode(String code);
 
     Map<String, BatchItemResult> deleteByCodes(String... codes);
-
-//    int deleteByCode(String code);
-
-//    int deleteByRequest(Map<String, Object> map);
-
 
     boolean update(SysFile sysFile);
 
@@ -58,12 +57,12 @@ public interface SysFileService {
      */
     SysFile writeFileToLocalDiskAndCreateDBIndex(MultipartFile file);
 
-    boolean saveAll(List<SysFile> files);
-
     @Deprecated
     SysFile getById(Long id);
 
     List<SysFile> listByCode(String code);
+
+    List<SysFile> listByHash(String hash);
 
     SysFile getByIdOrCode(Object idOrCode);
 

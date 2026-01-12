@@ -172,7 +172,7 @@ public class MediaRestController {
     }
 
     @GetMapping(value = "/cleanThumbnails")
-    public ResponseEntity<CleanThumbnailsResult> cleanThumbnails(@RequestParam(required = false) boolean moveToTrash) {
+    public ResponseEntity<CleanThumbnailsResult> cleanThumbnails(@RequestParam(required = false,defaultValue = "true") boolean moveToTrash) {
         return ResponseEntity.ok(mediaService.cleanThumbnails(moveToTrash));
     }
 

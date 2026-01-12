@@ -2,7 +2,6 @@ package com.arc.nas.model.domain.system.common;
 
 import com.arc.nas.model.constants.NormalConstants;
 import com.arc.util.CodeUtil;
-import com.arc.util.file.FileSameCheckTool;
 import com.arc.util.file.FileUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -68,7 +67,7 @@ public class SysFile implements Serializable {
     private Long id;
     private Date createTime;// 创建时间
     private Date updateTime;// 更新时间
-    private String code;//编号
+    private String code;//编号 db中不同行数据hash可以相同但是 code不相同
     private String hash;// sha256
     private String originalName;// 文件真实存在的名称（不含路径）
     private String displayName;// 显示名称（可为空，默认=originalName）
@@ -213,10 +212,6 @@ public class SysFile implements Serializable {
 
     }
 
-    public static SysFile createSysFile(File file) {
-        String mediaType = FileUtil.getFileType(file.getName()); // VIDEO / AUDIO / IMAGE / FILE
-        return createSysFile(file, mediaType, "");
-    }
 
     public static SysFile createSysFileSimple(File file, String taskStatus) {
         String mediaType = FileUtil.getFileType(file.getName()); // VIDEO / AUDIO / IMAGE / FILE
@@ -267,53 +262,6 @@ public class SysFile implements Serializable {
 
     }
 
-    public static SysFile createSysFile(File file, String mediaType, String remark) {
-
-        Path path = file.toPath();
-        BasicFileAttributes attr = null;
-        String taskStatus = "";
-        if (Files.exists(path)) {
-            try {
-                attr = Files.readAttributes(path, BasicFileAttributes.class);
-            } catch (IOException e) {
-                taskStatus = "ERROR";
-                remark = "Files.readAttributes error";
-            }
-        } else {
-            taskStatus = "ERROR";
-            remark = "File not exists";
-        }
-
-        long length = file.length();
-
-        Long createTime = null;
-        Long modifiedTime = null;
-        if (attr != null) {
-            createTime = attr.creationTime().toMillis();
-            modifiedTime = attr.lastModifiedTime().toMillis();
-
-        }
-        String originalName = file.getName();
-        String displayName = FileUtil.getFilenameWithoutExtension(originalName);
-        String suffix = FileUtil.getExtension(originalName).toLowerCase(); // 小写统一
-        String mimeType = getMimeType(suffix);  // video/mp4 / image/jpeg ...
-        String storageType = "LOCAL";                    // 默认本地存储
-
-
-        // 默认初始化字段
-        String hash = FileSameCheckTool.calculateHashSHA256(file);          // 计算 SHA-256
-        String code = hash;
-        Integer version = 1;
-        Integer status = 1;                               // 1=正常
-        Integer referenceCount = 0;
-
-        if (createTime == null) {
-            return new SysFile(code, hash, originalName, displayName, suffix, mediaType, mimeType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
-        } else {
-            return new SysFile(new Date(createTime), new Date(modifiedTime), code, hash, originalName, displayName, suffix, mediaType, mimeType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
-        }
-
-    }
 
     /**
      * 根据文件扩展名返回 MIME 类型

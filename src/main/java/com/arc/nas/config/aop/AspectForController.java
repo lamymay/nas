@@ -164,9 +164,8 @@ public class AspectForController {
     public static class ErrorData {
 
         private static final Logger log = LoggerFactory.getLogger(ErrorData.class);
-
-        private String message;
         private final long serverResponseTime = System.currentTimeMillis();
+        private String message;
         private int code;
         private String details;
 
