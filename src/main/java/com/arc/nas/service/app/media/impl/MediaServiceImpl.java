@@ -412,7 +412,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     public CleanThumbnailsResult cleanThumbnails(boolean moveToTrash) {
-        log.info("cleanThumbnails moveToTrash={}",moveToTrash);
+        log.info("cleanThumbnails moveToTrash={}", moveToTrash);
         List<SysFile> thumbnails = sysFileDAO.listAllByMediaType(THUMBNAIL);
         if (thumbnails == null) {
             return CleanThumbnailsResult.ok();
@@ -538,6 +538,7 @@ public class MediaServiceImpl implements MediaService {
         result.setTotal(fileList.size());
         List<SysFile> updateAll = new LinkedList<>();
         Long imageSkipSize = config.getImageSkipSize();
+        if (imageSkipSize == null) imageSkipSize = 0L;
         for (SysFile file : fileList) {
             if (file == null) continue;
             boolean doThumbnails = false;// StringTool.isBlank(file.getThumbnail());

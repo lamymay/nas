@@ -50,7 +50,26 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
     @Autowired
     private Environment env;
 
-    private static void print() {
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        System.out.println("容器刷新事件 SystemInitializationStartup");
+        //Spring容器加载完毕之后执行: 以下方法
+        log.info("系统启动后触发初始化={}", initial);
+        if (initial) {
+            new Runnable() {
+                @Override
+                public void run() {
+                    printFileServerPath();
+                }
+            }.run();
+        }
+//        String[] activeProfiles = env.getActiveProfiles();
+//        Object requiredProperty = env.getRequiredProperty("propertySources");
+        // 初始化文件上传的输出文件夹
+        ReadyResourceInit.init();
+
+        System.out.println(ReadyResourceInit.getWriteableDirectory());
+
 
     }
 
@@ -90,29 +109,6 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
         this.port = port;
     }
 
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        //Spring容器加载完毕之后执行: 以下方法
-        log.info("系统启动后触发初始化={}", initial);
-        if (initial) {
-            new Runnable() {
-                @Override
-                public void run() {
-                    print();
-                    printFileServerPath();
-                }
-            }.run();
-        }
-//        String[] activeProfiles = env.getActiveProfiles();
-//        Object requiredProperty = env.getRequiredProperty("propertySources");
-
-        // 初始化文件上传的输出文件夹
-        ReadyResourceInit.init();
-
-        System.out.println(ReadyResourceInit.getWriteableDirectory());
-
-
-    }
 
     public void printFileServerPath() {
         System.out.println("##################################################");

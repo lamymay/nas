@@ -12,12 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.arc.util.StringTool.displayTimeWithUnit;
 
 @Component
 public class ScheduleTask {
@@ -27,7 +26,7 @@ public class ScheduleTask {
     private final SysFileDAO sysFileDAO;
     private final MediaService mediaService;
     //SysFileFolder
-    long latest = System.currentTimeMillis();
+    long taskEnd = System.currentTimeMillis();
 
     public ScheduleTask(MediaResource mediaResource,
                         SysFileDAO sysFileDAO,
@@ -38,41 +37,37 @@ public class ScheduleTask {
     }
 
     // 方式 A：使用注解（最简单） fixedDelay: 上一次任务结束到下一次任务开始的间隔
-    @Scheduled(fixedDelay = 2000)
+    @Scheduled(fixedDelay = 20000)
     public void scanFolder() {
-        long scanFolderT0 = System.currentTimeMillis();
-        log.info("scanFolder 定时任务执行：扫描文件夹...距离上次执行完毕时间间隔{}", StringTool.getTimeStringSoFar(latest));
+        log.info("scanFolder 定时任务执行：扫描文件夹...距离上次执行完毕时间间隔{}", StringTool.getTimeStringSoFar(taskEnd));
+        StopWatch stopWatch = new StopWatch("ScheduleTask");
 
         // 1 monitor Folders
+        stopWatch.start("prepareMonitorFolders");
         Set<String> scanFolders = prepareMonitorFolders();
+        stopWatch.stop();
 
-        // 2 scan folder is file --index db
+        // 2 scan & index
+        stopWatch.start("scan & index");
         mediaService.scan(scanFolders.toArray(new String[0]));
+        stopWatch.stop();
 
         // 3 hash
-        long updateHashStart = System.currentTimeMillis();
+        stopWatch.start("hash");
         mediaService.updateHash(false);
-        long updateHashEnd = System.currentTimeMillis();
+        stopWatch.stop();
 
         // 4 generateThumbnails (by index db)
-        long generateThumbnailResultT0 = System.currentTimeMillis();
-        GenerateThumbnailResult generateThumbnailResult = null;
+        stopWatch.start("generateThumbnails");
         try {
-            GenerateThumbnailConfig config = new GenerateThumbnailConfig();
-            config.setForce(false);
-            config.setOverwrite(true);
-            generateThumbnailResult = mediaService.generateThumbnails(config);
+            GenerateThumbnailResult generateThumbnailResult = mediaService.generateThumbnails(new GenerateThumbnailConfig());
+            log.info("GenerateThumbnailResult={} \n ", JSON.toJSONString(generateThumbnailResult));
         } catch (Exception exception) {
-            log.error("处理缩略图异常!（建议检查环境ffmpeg是否配置ok）", exception);
+            log.error("GenerateThumbnailResult 处理缩略图异常!（建议检查环境ffmpeg是否配置ok）", exception);
         }
-        long generateThumbnailResultTimeEnd = System.currentTimeMillis();
-        latest = System.currentTimeMillis();
-
-        log.info("scanFolder result={} \n 耗时统 整体耗时={} hash处理={}处理缩略图={}",
-                JSON.toJSONString(generateThumbnailResult),
-                displayTimeWithUnit(updateHashStart, updateHashEnd),
-                displayTimeWithUnit(scanFolderT0, generateThumbnailResultTimeEnd),
-                displayTimeWithUnit(generateThumbnailResultT0, generateThumbnailResultTimeEnd));
+        stopWatch.stop();
+        // 替换 log.info("耗时统\n{}", stopWatch.prettyPrint());
+        log.info("任务耗时统计 (ms):\n{}", formatStopWatchToMs(stopWatch));
 
     }
 
@@ -88,4 +83,27 @@ public class ScheduleTask {
     }
 
 
+
+
+
+    // 辅助方法
+    private String formatStopWatchToMs(StopWatch sw) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("---------------------------------------------\n");
+        sb.append("ms          %     Task name\n");
+        sb.append("---------------------------------------------\n");
+        for (StopWatch.TaskInfo task : sw.getTaskInfo()) {
+            // 将纳秒转换为毫秒，保留 3 位小数或直接取整
+            double ms = task.getTimeNanos() / 1_000_000.0;
+            double percent = (double) task.getTimeNanos() / sw.getTotalTimeNanos();
+
+            sb.append(String.format("%-10.2f  %03d%%  %s%n",
+                    ms,
+                    Math.round(percent * 100),
+                    task.getTaskName()));
+        }
+        sb.append("---------------------------------------------\n");
+        sb.append(String.format("Total: %.2f ms", sw.getTotalTimeMillis() * 1.0));
+        return sb.toString();
+    }
 }

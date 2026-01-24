@@ -7,7 +7,7 @@ public class GenerateThumbnailConfig {
      */
     // todo 采用配置到db的方式来做
     private String thumbnailRoot;
-    private boolean force;
+    private boolean force=false;
 
     /**
      * 缩略图宽度，320 480 ...
