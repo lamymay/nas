@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS sys_key_value (
 CREATE TABLE IF NOT EXISTS sys_file (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     code VARCHAR(255) NOT NULL,          -- 业务编号
     hash VARCHAR(64),                     -- sha256
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS sys_file (
 CREATE TABLE IF NOT EXISTS media_file_resource (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 注意 H2 2.x 的语法
     path VARCHAR(2048) NOT NULL,          -- 文件本地存放位置--本地存储的情况应该是服务器的绝对路径
     task_status VARCHAR(32)   ,             -- 文件处理进度
     remark VARCHAR(500),                  -- 描述
@@ -63,7 +63,6 @@ CREATE TABLE IF NOT EXISTS media_file_resource (
     duration BIGINT
 
 );
-
 
 CREATE TABLE IF NOT EXISTS media_tag(
     code VARCHAR(64) PRIMARY KEY, -- 编号，UUID

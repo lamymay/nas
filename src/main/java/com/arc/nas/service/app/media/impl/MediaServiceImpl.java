@@ -51,10 +51,7 @@ public class MediaServiceImpl implements MediaService {
     private final UrlHelper urlHelper;
 
     //private final ListeningExecutorService executor;
-
     //ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2);
-
-
     public MediaServiceImpl(SysFileService fileService, SysFileDAO sysFileDAO, FileTagRelationDAO fileTagRelationDAO,
                             UrlHelper urlHelper) {
         this.fileService = fileService;
@@ -528,7 +525,6 @@ public class MediaServiceImpl implements MediaService {
         return thumbnailCodes;
     }
 
-
     private GenerateThumbnailItemResult generateThumbnailsImage(GenerateThumbnailConfig config) {
         List<SysFile> fileList = sysFileDAO.listAllByMediaType("IMAGE");
         GenerateThumbnailItemResult result = new GenerateThumbnailItemResult();
@@ -575,7 +571,6 @@ public class MediaServiceImpl implements MediaService {
         if (!updateAll.isEmpty()) sysFileDAO.updateAll(updateAll);
         return result;
     }
-
 
     private GenerateThumbnailItemResult generateThumbnailsVideo(GenerateThumbnailConfig config) {
         // 1 查询db中的全部视频
@@ -646,11 +641,6 @@ public class MediaServiceImpl implements MediaService {
         mergedSet.addAll(thumbnailCodes);
 
         return String.join(",", mergedSet);
-    }
-
-    public String convertToString(Set<String> set) {
-        if (set == null || set.isEmpty()) return null;
-        return String.join(",", set);
     }
 
 }

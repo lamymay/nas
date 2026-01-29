@@ -38,6 +38,7 @@ public class ScheduleTask {
 
     // 方式 A：使用注解（最简单） fixedDelay: 上一次任务结束到下一次任务开始的间隔
     @Scheduled(fixedDelay = 20000)
+//    @Scheduled(initialDelay = 5000, fixedRate = 60000)
     public void scanFolder() {
         log.info("scanFolder 定时任务执行：扫描文件夹...距离上次执行完毕时间间隔{}", StringTool.getTimeStringSoFar(taskEnd));
         StopWatch stopWatch = new StopWatch("ScheduleTask");

@@ -1,0 +1,19 @@
+
+// 延迟执行 计算hash 缩略图
+// scheduledExecutor.schedule(() -> matchAndGenerateThumbnailsInner(), 5, TimeUnit.SECONDS);
+
+
+    // 方式 B：手动通过线程池提交（最灵活，适合动态调整频率）
+//    @Autowired
+//    private ThreadPoolTaskScheduler taskScheduler;
+//    public void startDynamicTask() {
+//        taskScheduler.scheduleAtFixedRate(() -> {
+//            log.info("手动提交的任务正在运行...");
+//        }, 10000); // 每10秒运行一次
+//    }
+
+    final static String userHome = System.getProperty("user.home");
+
+
+SELECT * FROM SYS_FILE  where  MEDIA_TYPE!= "IMAGE"
+

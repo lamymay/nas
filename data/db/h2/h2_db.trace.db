@@ -1,0 +1,6 @@
+2026-01-29 21:49:44 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "SYS_FILE" not found (this database is empty); SQL statement:
+SELECT  id,create_time,update_time,code,hash,original_name,display_name,suffix,media_type,mime_type,storage_type,path,length,version,status,reference_count,remark,task_status,thumbnail,author,maturity_level,duration  FROM sys_file      WHERE  (media_type = ?) [42104-214]
+2026-01-29 21:49:44 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "MEDIA_FILE_RESOURCE" not found (this database is empty); SQL statement:
+SELECT  id,create_time,update_time,remark,path,task_status,duration,total_file_count,total_folder_count,total_file_length  FROM media_file_resource           ORDER BY update_time DESC [42104-214]
