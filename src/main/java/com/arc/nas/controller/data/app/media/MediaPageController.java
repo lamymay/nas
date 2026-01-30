@@ -13,23 +13,23 @@ public class MediaPageController {
 
     @GetMapping("/media/home")
     public String homePage(Model model) {
-        return "/media/media_home";
+        return "media/media_home";
     }
 
     @GetMapping("/media/video")
     public String homeVideo(Model model) {
-        return "/media/media_video";
+        return "media/media_video";
     }
 
     @GetMapping("/media/image")
     public String videoImage(Model model) {
-        return "/media/media_image";
+        return "media/media_image";
     }
 
     @GetMapping("/media/cms")
     public String videoCMS(Model model) {
         // 页面初始加载时不需要传数据，由前端通过接口动态请求
-        return "/media/media_cms";
+        return "media/media_cms";
     }
 
 

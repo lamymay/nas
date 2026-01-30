@@ -12,7 +12,7 @@
 
     <groupId>com.arc</groupId>
     <artifactId>nas</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>nas</name>
     <description>server project for Spring Boot</description>
     <packaging>jar</packaging>
