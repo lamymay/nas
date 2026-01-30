@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>媒体库首页</title>
     <style>
         /* 基础布局 */
@@ -21,11 +22,12 @@
             overflow: hidden;
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background-color: #ddd;
         }
         .media-card img {
             width: 100%;
-            height: 120px; /* 固定高度让网格对齐 */
-            object-fit: cover; /* 缩略图裁剪填充 */
+            height: 120px; /* 固定网格高度 */
+            object-fit: cover; /* 自动裁剪对齐 */
             display: block;
         }
 
@@ -35,38 +37,38 @@
             position: fixed;
             z-index: 1000;
             inset: 0;
-            background-color: rgba(0,0,0,0.9); /* 加深背景 */
+            background-color: rgba(0,0,0,0.9);
             align-items: center;
             justify-content: center;
             opacity: 0;
             transition: opacity 0.25s ease;
+            cursor: zoom-out; /* 点击背景退出的视觉引导 */
         }
         .modal.show {
             display: flex;
             opacity: 1;
         }
 
-        /* 修复的核心：图片内容容器 */
+        /* 内容容器 */
         .modal-content {
             position: relative;
-            width: 95vw;    /* 宽度最大为屏幕宽度的 95% */
-            height: 90vh;   /* 高度最大为屏幕高度的 90% */
+            width: 95vw;
+            height: 90vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
+            cursor: default; /* 重置内部容器手势 */
         }
 
-        /* 修复的核心：图片缩放逻辑 */
+        /* 图片缩放逻辑：修复底部溢出 */
         .modal img {
             max-width: 100%;
             max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain; /* 确保图片比例正确且完整显示 */
+            object-fit: contain;
             transition: transform 0.25s ease, opacity 0.25s ease;
             user-select: none;
             -webkit-user-drag: none;
+            cursor: pointer; /* 图片本身点击切换 */
         }
         .modal img.hidden {
             transform: scale(0.95);
@@ -92,6 +94,7 @@
             z-index: 1001;
             transition: opacity 0.2s ease;
             border-radius: 0 0 8px 8px;
+            pointer-events: auto;
         }
 
         .modal-info.show {
@@ -106,40 +109,27 @@
             cursor: pointer;
             font-size: 12px;
             border-radius: 4px;
-            transition: background 0.3s;
-        }
-        .delete-btn:hover {
-            background-color: #ff7875;
         }
 
-        /* 左右切换动画 */
+        /* 切换动画 */
         .slide-left { animation: slideLeft 0.25s ease-out; }
         .slide-right { animation: slideRight 0.25s ease-out; }
         @keyframes slideLeft { from { transform: translateX(-30px); opacity:0; } to { transform: translateX(0); opacity:1; } }
         @keyframes slideRight { from { transform: translateX(30px); opacity:0; } to { transform: translateX(0); opacity:1; } }
-
-        /* Toast 样式保持不变 */
     </style>
 </head>
 <body>
+
 <div class="media-grid" id="mediaGrid"></div>
 
-<!-- 模态窗口 -->
 <div class="modal" id="modal">
     <div class="modal-content" id="modalContent">
         <div class="modal-info" id="modalInfo"></div>
         <img id="modalImg" src="">
     </div>
 </div>
-<!-- 在 body 内添加 toast 容器 -->
-<div id="toastContainer" style="
-    position: fixed;
-    top: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    pointer-events: none;
-"></div>
+
+<div id="toastContainer" style="position: fixed; top: 10%; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none;"></div>
 
 <script>
     let imageItems = [];
@@ -147,31 +137,30 @@
     let startX = 0;
     let deleteConfirm = false;
 
+    // 加载数据
     async function loadMedia() {
-        const response = await fetch('/nas/api/media/home?mediaType=IMAGE');
-        const data = await response.json();
+        try {
+            const response = await fetch('/nas/api/media/home?mediaType=IMAGE');
+            const data = await response.json();
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = '';
 
-        const grid = document.getElementById('mediaGrid');
-        grid.innerHTML = '';
+            imageItems = data.content.filter(item => item.mediaType === 'IMAGE');
 
-        imageItems = data.content.filter(item => item.mediaType === 'IMAGE');
-
-      imageItems.forEach((item, index) => {
-    const card = document.createElement('div');
-    card.className = 'media-card';
-
-    const img = document.createElement('img');
-    img.src = (item.thumbnails && item.thumbnails.length > 0 && item.thumbnails[0])
-                ? item.thumbnails[0]
-                : item.url;
-    img.alt = item.displayName;
-    img.dataset.index = index;
-    img.addEventListener('click', () => openModal(item));
-    card.appendChild(img);
-
-    grid.appendChild(card);
-});
-
+            imageItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'media-card';
+                const img = document.createElement('img');
+                img.src = (item.thumbnails && item.thumbnails.length > 0 && item.thumbnails[0])
+                            ? item.thumbnails[0] : item.url;
+                img.alt = item.displayName;
+                img.addEventListener('click', () => openModal(item));
+                card.appendChild(img);
+                grid.appendChild(card);
+            });
+        } catch (e) {
+            showToast("加载数据失败");
+        }
     }
 
     const modal = document.getElementById('modal');
@@ -179,6 +168,7 @@
     const modalImg = document.getElementById('modalImg');
     const modalInfo = document.getElementById('modalInfo');
 
+    // 更新信息栏
     function updateModalInfo(item) {
         modalInfo.innerHTML = `
             <span>名称: ${item.displayName} | 大小: ${(item.length/1024).toFixed(2)} KB | 状态: ${item.taskStatus}| 位置: ${item.path}</span>
@@ -191,26 +181,20 @@
             if(!deleteConfirm){
                 deleteConfirm = true;
                 deleteBtn.textContent = '确定删除?';
-                setTimeout(() => {
-                    deleteConfirm = false;
-                    deleteBtn.textContent = '删除';
-                }, 3000); // 3秒取消确认
+                setTimeout(() => { deleteConfirm = false; deleteBtn.textContent = '删除'; }, 3000);
             } else {
-                const code = item.code;
                 try {
-                    const res = await fetch(`/nas/api/media/remove/${code}`);
+                    const res = await fetch(`/nas/api/media/remove/${item.code}`);
                     const success = await res.json();
-                     if(success){
+                    if(success){
                         showToast('删除成功');
                         closeModal();
                         loadMedia();
                     } else {
                         showToast('删除失败');
                     }
-
                 } catch(err){
-                    alert('删除异常');
-                    console.error(err);
+                    showToast('删除异常');
                 }
             }
         });
@@ -219,10 +203,8 @@
     function openModal(item) {
         currentIndex = imageItems.findIndex(i => i.code === item.code);
         modal.style.display = 'flex';
-
         modalImg.classList.add("hidden");
         updateModalInfo(item);
-
         setTimeout(() => {
             modal.classList.add("show");
             modalImg.src = item.url;
@@ -238,19 +220,21 @@
     function showPrev() {
         if(imageItems.length === 0) return;
         currentIndex = (currentIndex - 1 + imageItems.length) % imageItems.length;
-        const item = imageItems[currentIndex];
-        modalImg.src = item.url;
-        updateModalInfo(item);
+        renderCurrentItem();
         playSwitchAnimation("left");
     }
 
     function showNext() {
         if(imageItems.length === 0) return;
         currentIndex = (currentIndex + 1) % imageItems.length;
+        renderCurrentItem();
+        playSwitchAnimation("right");
+    }
+
+    function renderCurrentItem() {
         const item = imageItems[currentIndex];
         modalImg.src = item.url;
         updateModalInfo(item);
-        playSwitchAnimation("right");
     }
 
     function playSwitchAnimation(direction) {
@@ -259,87 +243,75 @@
         modalImg.classList.add(direction === "left" ? 'slide-left' : 'slide-right');
     }
 
-    // 鼠标悬停显示顶部信息
+    // --- 核心修复：点击逻辑 ---
+    modal.addEventListener('click', (e) => {
+        // 1. 如果点的是最外层背景（modal）或内容容器（modalContent）
+        // 而不是图片或信息栏，则直接关闭
+        if (e.target === modal || e.target === modalContent) {
+            closeModal();
+            return;
+        }
+
+        // 2. 如果点击了图片或信息栏区域，执行切换判定
+        const rect = modal.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+
+        // 左半屏切换上一张，右半屏切换下一张
+        if (x < width / 2) {
+            showPrev();
+        } else {
+            showNext();
+        }
+    });
+
+    // 鼠标悬停显示信息
     modalContent.addEventListener('mousemove', (e) => {
-        if(e.clientY - modalContent.getBoundingClientRect().top < 50){
+        const rect = modalContent.getBoundingClientRect();
+        if(e.clientY - rect.top < 80){
             modalInfo.classList.add('show');
         } else {
             modalInfo.classList.remove('show');
         }
     });
 
-    // 点击左右屏幕切换或点击图片外退出
-    modal.addEventListener('click', (e) => {
-        if(e.target !== modalImg && e.target !== modalInfo) { closeModal(); return; }
-        const rect = modal.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const width = rect.width;
-        if(x < width * 0.4) showPrev();
-        else if(x > width * 0.6) showNext();
-    });
-
     // 键盘支持
     document.addEventListener('keydown', (e) => {
+        if(!modal.classList.contains('show')) return;
         if(e.key === "Escape") closeModal();
         else if(e.key === "ArrowLeft") showPrev();
         else if(e.key === "ArrowRight") showNext();
     });
 
-    // 滑动手势支持
-    modalImg.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
+    // 滑动手势
+    modalImg.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, {passive: true});
     modalImg.addEventListener('touchend', (e) => {
         const endX = e.changedTouches[0].clientX;
         const diff = endX - startX;
         if(diff > 50) showPrev();
         else if(diff < -50) showNext();
-    });
+    }, {passive: true});
+
+    function showToast(message, duration = 2000) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        Object.assign(toast.style, {
+            background: 'rgba(0, 0, 0, 0.8)', color: '#fff', padding: '10px 16px',
+            borderRadius: '12px', fontSize: '14px', marginTop: '8px',
+            opacity: '0', transform: 'translateY(-20px)',
+            transition: 'opacity 0.3s ease, transform 0.3s ease',
+            pointerEvents: 'auto', textAlign: 'center'
+        });
+        container.appendChild(toast);
+        requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => { if(toast.parentNode) container.removeChild(toast); }, 300);
+        }, duration);
+    }
 
     window.onload = loadMedia;
-
-
-function showToast(message, duration = 2000) {
-    const container = document.getElementById('toastContainer');
-
-    const toast = document.createElement('div');
-    toast.textContent = message;
-
-    // iOS 风格样式
-    Object.assign(toast.style, {
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: '#fff',
-        padding: '10px 16px',
-        borderRadius: '12px',
-        fontSize: '14px',
-        fontWeight: '500',
-        marginTop: '8px',
-        opacity: '0',
-        transform: 'translateY(-20px)',
-        transition: 'opacity 0.3s ease, transform 0.3s ease',
-        pointerEvents: 'auto',
-        maxWidth: '80%',
-        textAlign: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-    });
-
-    container.appendChild(toast);
-
-    // 显示动画
-    requestAnimationFrame(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-    });
-
-    // 自动消失
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-20px)';
-        setTimeout(() => {
-            if(toast.parentNode) container.removeChild(toast);
-        }, 300);
-    }, duration);
-}
 </script>
-
-
 </body>
 </html>
