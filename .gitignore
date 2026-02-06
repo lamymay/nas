@@ -10,7 +10,8 @@
 *.iws
 *.iml
 *.ipr
-
+data/db/h2
+data/temp
 # 忽略文件夹
 .idea
 target/
