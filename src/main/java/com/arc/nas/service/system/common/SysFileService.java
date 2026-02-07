@@ -30,7 +30,8 @@ public interface SysFileService {
 //    boolean saveAll(List<SysFile> files);
 
     /**
-     *  删除index & 文件系统中的文件
+     * 删除index & 文件系统中的文件
+     *
      * @param id id
      * @return Boolean
      */
@@ -89,6 +90,8 @@ public interface SysFileService {
 
     List<SysFile> listAllByMediaType(String thumbnail);
 
-    Map<String, Map<String, SysFile>> listAllByQuery(SysFileQuery pageable);
+    Map<String, Map<String, SysFile>> listAsTypeMapAllByQuery(SysFileQuery pageable);
+
+    List<SysFile> listAllByQuery(SysFileQuery pageable);
 
 }

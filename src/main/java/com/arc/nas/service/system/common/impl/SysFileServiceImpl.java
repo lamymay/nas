@@ -556,11 +556,14 @@ public class SysFileServiceImpl implements SysFileService {
     }
 
     @Override
-    public Map<String, Map<String, SysFile>> listAllByQuery(SysFileQuery query) {
+    public Map<String, Map<String, SysFile>> listAsTypeMapAllByQuery(SysFileQuery query) {
         List<SysFile> fileList = sysFileDAO.listFilesByMediaTypesAndTags(query);
         return convertToMap(query.getMediaTypes(), fileList);
     }
 
-
+    @Override
+    public List<SysFile> listAllByQuery(SysFileQuery query) {
+        return sysFileDAO.listFilesByMediaTypesAndTags(query);
+    }
 }
 

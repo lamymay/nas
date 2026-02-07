@@ -12,22 +12,27 @@ public class MediaPageController {
     private static final Logger log = LoggerFactory.getLogger(MediaPageController.class);
 
     @GetMapping("/media/home")
-    public String homePage(Model model) {
+    public String homeHome(Model model) {
         return "media/media_home";
     }
 
     @GetMapping("/media/video")
-    public String homeVideo(Model model) {
+    public String media_video(Model model) {
         return "media/media_video";
     }
 
+    @GetMapping("/media/v2")
+    public String media_video_v2(Model model) {
+        return "media/media_video_v2";
+    }
+
     @GetMapping("/media/image")
-    public String videoImage(Model model) {
+    public String mediaImage(Model model) {
         return "media/media_image";
     }
 
     @GetMapping("/media/cms")
-    public String videoCMS(Model model) {
+    public String mediaCMS(Model model) {
         // 页面初始加载时不需要传数据，由前端通过接口动态请求
         return "media/media_cms";
     }

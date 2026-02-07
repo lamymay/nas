@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.arc.nas.model.dto.app.media.MediaItemDTO.covertSysFileToMediaItemDTO;
 import static com.arc.nas.service.system.common.SysFileService.VIDEO;
 
 @RestController
@@ -172,7 +173,7 @@ public class MediaRestController {
     }
 
     @GetMapping(value = "/cleanThumbnails")
-    public ResponseEntity<CleanThumbnailsResult> cleanThumbnails(@RequestParam(required = false,defaultValue = "true") boolean moveToTrash) {
+    public ResponseEntity<CleanThumbnailsResult> cleanThumbnails(@RequestParam(required = false, defaultValue = "true") boolean moveToTrash) {
         return ResponseEntity.ok(mediaService.cleanThumbnails(moveToTrash));
     }
 
@@ -210,13 +211,14 @@ public class MediaRestController {
             query.setMediaTypes(Arrays.asList(VIDEO, SysFileService.IMAGE).stream().collect(Collectors.toSet()));
         }
         log.info("listMedia query={}", JSON.toJSONString(query));
-        Map<String, Map<String, SysFile>> byMediaTypesMap = sysFileService.listAllByQuery(query);
+        Map<String, Map<String, SysFile>> byMediaTypesMap = sysFileService.listAsTypeMapAllByQuery(query);
         Map<String, Map<String, MediaItemDTO>> finalMap = new HashMap<>();
         for (Map.Entry<String, Map<String, SysFile>> stringMapEntry : byMediaTypesMap.entrySet()) {
             String mediaTypeKey = stringMapEntry.getKey();
             Map<String, SysFile> sysFileMap = stringMapEntry.getValue();
             List<SysFile> files = sysFileMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toList());
-            Map<String, MediaItemDTO> collect = urlHelper.covertSysFileToMediaItemDTO(files).stream().collect(Collectors.toMap(MediaItemDTO::getCode, f -> f));
+            String prefix = urlHelper.getPrefix();
+            Map<String, MediaItemDTO> collect = covertSysFileToMediaItemDTO(files, prefix).stream().collect(Collectors.toMap(MediaItemDTO::getCode, f -> f));
             finalMap.put(mediaTypeKey, collect);
         }
         return ResponseEntity.ok(finalMap);

@@ -23,5 +23,6 @@ public interface MediaService {
     GenerateThumbnailResult generateThumbnails(GenerateThumbnailConfig config);
 
     CleanThumbnailsResult cleanThumbnails(boolean moveToTrash);
+
 }
 

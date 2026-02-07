@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import static com.arc.nas.init.ReadyResourceInit.getThumbnailRoot;
 import static com.arc.nas.init.ReadyResourceInit.thumbnailsDefaultFolderName;
 import static com.arc.nas.model.domain.system.common.SysFile.createSysFileSimple;
+import static com.arc.nas.model.dto.app.media.MediaItemDTO.covertSysFileToMediaItemDTO;
 import static com.arc.nas.service.system.common.SysFileService.*;
 import static com.arc.util.file.FFmpegThumbnailGenerator.generateImageThumbnail;
 import static com.arc.util.file.FFmpegThumbnailGenerator.generateVideoThumbnailsSync;
@@ -289,7 +290,7 @@ public class MediaServiceImpl implements MediaService {
     public MediaPageDTO listPage(SysFilePageable pageable) {
         Page<SysFile> page = fileService.listPage(pageable);
         MediaPageDTO mediaPageDTO = new MediaPageDTO();
-        mediaPageDTO.setContent(urlHelper.covertSysFileToMediaItemDTO(page.getContent()));
+        mediaPageDTO.setContent(covertSysFileToMediaItemDTO(page.getContent(), urlHelper.getPrefix()));
         mediaPageDTO.setPageNumber(pageable.getPageNumber());
         mediaPageDTO.setPageSize(pageable.getPageSize());
         mediaPageDTO.setTotalElements(page.getTotalElements());
@@ -642,5 +643,6 @@ public class MediaServiceImpl implements MediaService {
 
         return String.join(",", mergedSet);
     }
+
 
 }

@@ -5,6 +5,7 @@ import com.arc.nas.model.dto.app.media.ScanRequest;
 import com.arc.nas.service.app.media.MediaResource;
 import com.arc.nas.service.app.media.impl.UrlHelper;
 import com.arc.nas.service.system.common.SysFileService;
+import com.arc.nas.service.system.common.impl.MQMocker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +23,16 @@ public class MediaCMSV2RestController {
 
     private final SysFileService sysFileService;
     private final MediaResource mediaResource;
+    private final MQMocker mqMocker;
 
     public MediaCMSV2RestController(SysFileService sysFileService,
                                     UrlHelper urlHelper,
-                                    MediaResource mediaResource) {
+                                    MediaResource mediaResource,
+                                    MQMocker mqMocker) {
         this.sysFileService = sysFileService;
         this.urlHelper = urlHelper;
         this.mediaResource = mediaResource;
+        this.mqMocker = mqMocker;
 
     }
 

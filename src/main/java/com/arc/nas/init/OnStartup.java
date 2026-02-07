@@ -30,5 +30,5 @@ public class OnStartup implements ApplicationListener<ContextRefreshedEvent> {
             log.error("ERROR onApplicationEvent", exception);
         }
 
-}
+    }
 }

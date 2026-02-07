@@ -28,6 +28,7 @@ public class KeyValue implements Serializable {
     private Date updateTime;// 更新时间
     /**
      * 键
+     * 注意 定位一条唯一数据 是  range + key
      */
     @TableField(value = "`key`")
     private String key;

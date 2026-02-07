@@ -9,9 +9,9 @@ import java.util.Date;
 
 
 /**
- * 系统文件媒体库
+ * 系统媒体库目录配置表
  */
-@TableName("media_file_resource")
+@TableName("media_resource_config")
 public class MediaFileResource implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)

@@ -4,7 +4,7 @@
 <mapper namespace="com.arc.nas.repository.mysql.mapper.app.MediaFileResourceMapper">
 
     <delete id="deleteByPaths">
-        DELETE FROM media_file_resource
+        DELETE FROM MEDIA_RESOURCE_CONFIG
         WHERE path IN
         <foreach collection="paths" item="path" open="(" separator="," close=")">
             #{path}

@@ -14,13 +14,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/media/tag")
-public class MediaTagController {
+public class MediaTagRestController {
 
-    private static final Logger log = LoggerFactory.getLogger(MediaTagController.class);
+    private static final Logger log = LoggerFactory.getLogger(MediaTagRestController.class);
 
     private final MediaTagDAO mediaTagDAO;
 
-    public MediaTagController(MediaTagDAO mediaTagDAO) {
+    public MediaTagRestController(MediaTagDAO mediaTagDAO) {
         this.mediaTagDAO = mediaTagDAO;
     }
 

@@ -5,7 +5,16 @@ public class MediaSegmentDTO {
     private String url;        // 分段文件访问 URL
     private Long length;       // 分段大小（byte）
     private Integer index;     // 分段序号
-    private Double duration;   // 分段时长（秒，可选）
+    private Long duration;   // 分段时长（秒，可选）
+
+
+    public MediaSegmentDTO(String url, Long length, Long duration) {
+        this.url = url;
+        this.length = length;
+        this.index = 0;
+        this.duration = duration;
+
+    }
 
     public String getUrl() {
         return url;
@@ -31,11 +40,11 @@ public class MediaSegmentDTO {
         this.index = index;
     }
 
-    public Double getDuration() {
+    public Long getDuration() {
         return duration;
     }
 
-    public void setDuration(Double duration) {
+    public void setDuration(Long duration) {
         this.duration = duration;
     }
 }

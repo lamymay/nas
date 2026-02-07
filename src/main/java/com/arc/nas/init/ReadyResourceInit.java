@@ -15,13 +15,13 @@ import static org.springframework.util.StringUtils.cleanPath;
  */
 public class ReadyResourceInit {
 
+    public final static String thumbnailsDefaultFolderName = ".thumbnails.bundle";
     /**
      * 临时目录，注意你电脑上是否有该目录
      * 配置的项目文件输出目录，注意你电脑上是否有该目录
      * 读取配置文件 @Value("${arc.file.upload.path:/data/upload}")
      */
     public static File writeableDirectory;
-
     static String osName = System.getProperty("os.name") == null ? "" : System.getProperty("os.name");
 
     static {
@@ -75,7 +75,6 @@ public class ReadyResourceInit {
         }).run();
     }
 
-
     public static File getWriteableDirectory() {
         return writeableDirectory;
     }
@@ -84,8 +83,6 @@ public class ReadyResourceInit {
     public static void setWriteableDirectory(File writeableDirectory) {
         ReadyResourceInit.writeableDirectory = writeableDirectory;
     }
-
-    public final static String thumbnailsDefaultFolderName = ".thumbnails.bundle";
 
     public final static File getThumbnailRoot() {
         File file = new File(".", thumbnailsDefaultFolderName);

@@ -50,6 +50,18 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
     @Autowired
     private Environment env;
 
+    public static void main(String[] args) {
+        //print();
+        System.out.println(new SystemInitializationStartup().getUrlStartWith(null));
+        System.out.println(new SystemInitializationStartup().getUrlStartWith(""));
+        System.out.println(new SystemInitializationStartup().getUrlStartWith(" "));
+        System.out.println(new SystemInitializationStartup().getUrlStartWith("abc"));
+        System.out.println(new SystemInitializationStartup().getUrlStartWith("/abc/"));
+        System.out.println(new SystemInitializationStartup().getUrlStartWith("/abc"));
+        System.out.println(new SystemInitializationStartup().getUrlStartWith("abc/"));
+
+    }
+
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         System.out.println("容器刷新事件 SystemInitializationStartup");
@@ -70,18 +82,6 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
 
         System.out.println(ReadyResourceInit.getWriteableDirectory());
 
-
-    }
-
-    public static void main(String[] args) {
-        //print();
-        System.out.println(new SystemInitializationStartup().getUrlStartWith(null));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith(""));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith(" "));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("abc"));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("/abc/"));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("/abc"));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("abc/"));
 
     }
 

@@ -1,26 +1,53 @@
 package com.arc.nas.model.dto.app.media;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import cn.hutool.core.bean.BeanUtil;
+import com.arc.nas.model.domain.system.common.SysFile;
+
+import java.util.*;
 
 public class MediaItemDTO {
     private String code;            // 文件编号
-    private Date createTime;// 创建时间
-    private Date updateTime;// 更新时间
-    @Deprecated
-    private String originalName;    // 原始文件名
     private String displayName;     // 显示名称
     private String mediaType;       // VIDEO / IMAGE / AUDIO
     private String mimeType;        // MIME类型 video/mp4 / image/jpeg
-    private String url;             // 可访问的播放或下载URL
     private Set<String> thumbnails;    // 缩略图URL，如果是视频可生成封面图
     private Long length;            // 文件大小，单位byte
-    private String remark;          // 描述 / 文案
-    private String path;
-    private String taskStatus;      // 文件处理状态：PENDING / DONE / FAILED
+    private String status;      // 文件状态
+
     private Map<String, List<MediaSegmentDTO>> segmentMap;// 不通过分辨率的视频视频切片 original 4K 720 480 240
+
+    public static List<MediaItemDTO> covertSysFileToMediaItemDTO(List<SysFile> contents, String urlPrefix) {
+        return contents.stream().map(sysFile -> {
+            MediaItemDTO dto = new MediaItemDTO();
+            BeanUtil.copyProperties(sysFile, dto);
+            // 构建访问 URL
+            String itemUrl = buildFileUrl(urlPrefix, sysFile.getCode());
+            Map<String, List<MediaSegmentDTO>> segmentMap = new HashMap<String, List<MediaSegmentDTO>>();
+            ArrayList<MediaSegmentDTO> mediaSegmentDTOS = new ArrayList<>();
+            mediaSegmentDTOS.add(new MediaSegmentDTO(itemUrl, sysFile.getLength(), sysFile.getDuration()));
+            segmentMap.put("original", mediaSegmentDTOS);
+            dto.setSegmentMap(segmentMap);
+            dto.setThumbnails(buildThumbnails(urlPrefix, sysFile.getThumbnail()));
+            return dto;
+        }).toList();
+    }
+
+    private static Set<String> buildThumbnails(String prefix, String thumbnail) {
+        HashSet<String> thumbnails = new HashSet<>();
+        if (thumbnail != null) {
+            for (String thumbnailCode : thumbnail.split(",")) {
+                thumbnails.add(buildFileUrl(prefix, thumbnailCode));
+            }
+        }
+        return thumbnails;
+    }
+
+    // 构建文件访问 URL
+    private static String buildFileUrl(String prefix, String code) {
+        // 如果存储在 LOCAL，可以用 contextPath + uri
+        // 如果 OSS/NAS 可以构建完整 URL
+        return prefix.replace("CODE", code);
+    }
 
     public Map<String, List<MediaSegmentDTO>> getSegmentMap() {
         return segmentMap;
@@ -36,30 +63,6 @@ public class MediaItemDTO {
 
     public void setCode(String code) {
         this.code = code;
-    }
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    public void setOriginalName(String originalName) {
-        this.originalName = originalName;
     }
 
     public String getDisplayName() {
@@ -86,14 +89,6 @@ public class MediaItemDTO {
         this.mimeType = mimeType;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
     public Set<String> getThumbnails() {
         return thumbnails;
     }
@@ -110,27 +105,11 @@ public class MediaItemDTO {
         this.length = length;
     }
 
-    public String getRemark() {
-        return remark;
+    public String getStatus() {
+        return status;
     }
 
-    public void setRemark(String remark) {
-        this.remark = remark;
-    }
-
-    public String getTaskStatus() {
-        return taskStatus;
-    }
-
-    public void setTaskStatus(String taskStatus) {
-        this.taskStatus = taskStatus;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
