@@ -1,4 +1,4 @@
-package com.arc.nas.service.system.common;
+package com.arc.nas.repository.mysql.dao.system;
 
 import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.request.app.media.SysFilePageable;

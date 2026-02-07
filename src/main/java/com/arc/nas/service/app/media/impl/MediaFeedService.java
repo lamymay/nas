@@ -5,7 +5,8 @@ import com.arc.nas.model.dto.app.media.MediaFeedDTO;
 import com.arc.nas.model.request.app.media.FeedQuery;
 import com.arc.nas.model.request.app.media.SysFileQuery;
 import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
-import com.arc.nas.service.system.common.SysFileDAO;
+import com.arc.nas.repository.mysql.dao.system.MediaClientViewLogDAO;
+import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,14 +22,17 @@ public class MediaFeedService {
     private final SysFileService fileService;
     private final SysFileDAO sysFileDAO;
     private final FileTagRelationDAO fileTagRelationDAO;
+    private final MediaClientViewLogDAO mediaClientViewLogDAO;
     private final UrlHelper urlHelper;
 
     public MediaFeedService(SysFileService fileService, SysFileDAO sysFileDAO, FileTagRelationDAO fileTagRelationDAO,
-                            UrlHelper urlHelper) {
+                            UrlHelper urlHelper,
+                            MediaClientViewLogDAO mediaClientViewLogDAO) {
         this.fileService = fileService;
         this.sysFileDAO = sysFileDAO;
         this.fileTagRelationDAO = fileTagRelationDAO;
         this.urlHelper = urlHelper;
+        this.mediaClientViewLogDAO = mediaClientViewLogDAO;
     }
 
     public MediaFeedDTO feed(FeedQuery query) {
@@ -39,10 +43,14 @@ public class MediaFeedService {
 
         // mock 推荐算法
 
+//        if(mediaClientViewLogDAO)
+
         // 结果聚合
 
         // 结果json 组装
         MediaFeedDTO build = MediaFeedDTO.build(sysFiles, urlHelper.getPrefix());
+        build.setCursor(query.getCursor()+build.getTotalElements());
+        build.setServerTime(query.getStep());
         return build;
     }
 

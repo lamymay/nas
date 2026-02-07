@@ -9,6 +9,8 @@ public class MediaItemDTO {
     private String code;            // 文件编号
     private String displayName;     // 显示名称
     private String mediaType;       // VIDEO / IMAGE / AUDIO
+    @Deprecated
+    private String url;             // 可访问的播放或下载URL
     private String mimeType;        // MIME类型 video/mp4 / image/jpeg
     private Set<String> thumbnails;    // 缩略图URL，如果是视频可生成封面图
     private Long length;            // 文件大小，单位byte
@@ -27,6 +29,7 @@ public class MediaItemDTO {
             mediaSegmentDTOS.add(new MediaSegmentDTO(itemUrl, sysFile.getLength(), sysFile.getDuration()));
             segmentMap.put("original", mediaSegmentDTOS);
             dto.setSegmentMap(segmentMap);
+            dto.setUrl(itemUrl);
             dto.setThumbnails(buildThumbnails(urlPrefix, sysFile.getThumbnail()));
             return dto;
         }).toList();
@@ -111,5 +114,13 @@ public class MediaItemDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

@@ -17,3 +17,4 @@ public interface SysFileMapper extends BaseMapper<SysFile> {
     List<SysFile> listFilesByMediaTypesAndTags(SysFileQuery query);
 
 }
+

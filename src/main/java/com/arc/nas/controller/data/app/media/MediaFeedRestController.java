@@ -15,16 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/feed")
-public class MediaRestV2Controller {
+public class MediaFeedRestController {
 
-    private static final Logger log = LoggerFactory.getLogger(MediaRestV2Controller.class);
+    private static final Logger log = LoggerFactory.getLogger(MediaFeedRestController.class);
 
     private final MediaFeedService mediaFeedService;
     private final SysFileService sysFileService;
 
     private final UrlHelper urlHelper;
 
-    public MediaRestV2Controller(MediaFeedService mediaFeedService, SysFileService sysFileService, UrlHelper urlHelper) {
+    public MediaFeedRestController(MediaFeedService mediaFeedService, SysFileService sysFileService, UrlHelper urlHelper) {
         this.mediaFeedService = mediaFeedService;
         this.sysFileService = sysFileService;
         this.urlHelper = urlHelper;

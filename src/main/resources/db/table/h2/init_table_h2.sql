@@ -3,6 +3,7 @@
 --drop table  IF  EXISTS media_tag;
 --drop table  IF  EXISTS media_file_tag_relation;
 --drop table  IF  EXISTS media_resource_config;
+--drop table  IF  EXISTS media_client_view_log;
 
 
 CREATE TABLE IF NOT EXISTS sys_key_value (
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS sys_file (
 
 );
 
-CREATE UNIQUE INDEX idx_sys_file_code ON sys_file (code);
+--CREATE UNIQUE INDEX idx_sys_file_code ON sys_file (code);
 
 
 --- 系统媒体库目录配置表
@@ -83,15 +84,12 @@ CREATE TABLE IF NOT EXISTS media_file_tag_relation (
 );
 
 ---  观看流水表 (核心：去重逻辑来源)
-CREATE TABLE IF NOT EXISTS `sys_client_view_log` (
-    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `view_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS media_client_view_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    play_at BIGINT NOT NULL DEFAULT 0,
     client_code VARCHAR(255) NOT NULL,
     file_code VARCHAR(255) NOT NULL
 );
-
---- 流水表创建联合索引
-CREATE INDEX `idx_sys_client_view_log_lookup` ON `sys_client_view_log`(`client_code`, `file_code`);
 
 
 CREATE TABLE IF NOT EXISTS sys_mq_task (

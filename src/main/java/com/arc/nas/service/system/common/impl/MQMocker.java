@@ -1,6 +1,5 @@
 package com.arc.nas.service.system.common.impl;
 
-import com.arc.nas.service.system.common.MqTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

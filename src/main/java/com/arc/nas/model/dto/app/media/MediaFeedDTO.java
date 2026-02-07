@@ -11,7 +11,7 @@ public class MediaFeedDTO {
 
     private int cursor;         // 当前位置
     private int step;           // 每页大小
-    private short hasMore;         // 是否有更多
+    private boolean hasMore;         // 是否有更多
     private long serverTime;
 
     private List<MediaItemDTO> content;
@@ -19,16 +19,17 @@ public class MediaFeedDTO {
     public static MediaFeedDTO build(List<SysFile> sysFiles, String prefix) {
         MediaFeedDTO result = new MediaFeedDTO();
         if (sysFiles == null || sysFiles.isEmpty()) {
-
+            result.setHasMore(false);
         } else {
             List<MediaItemDTO> mediaItemDTOS = covertSysFileToMediaItemDTO(sysFiles, prefix);
             result.setContent(mediaItemDTOS);
+            result.setHasMore(true);
         }
-
+        result.setServerTime(System.currentTimeMillis());
         return result;
     }
 
-    public Number getTotalElements() {
+    public Integer getTotalElements() {
         return content == null ? 0 : content.size();
     }
 
@@ -48,11 +49,11 @@ public class MediaFeedDTO {
         this.step = step;
     }
 
-    public short getHasMore() {
+    public boolean isHasMore() {
         return hasMore;
     }
 
-    public void setHasMore(short hasMore) {
+    public void setHasMore(boolean hasMore) {
         this.hasMore = hasMore;
     }
 

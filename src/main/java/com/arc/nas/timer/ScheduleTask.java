@@ -5,7 +5,7 @@ import com.arc.nas.model.request.app.media.GenerateThumbnailConfig;
 import com.arc.nas.model.request.app.media.GenerateThumbnailResult;
 import com.arc.nas.service.app.media.MediaResource;
 import com.arc.nas.service.app.media.MediaService;
-import com.arc.nas.service.system.common.SysFileDAO;
+import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.util.JSON;
 import com.arc.util.StringTool;
 import org.slf4j.Logger;

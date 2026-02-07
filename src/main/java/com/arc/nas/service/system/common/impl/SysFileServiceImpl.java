@@ -5,7 +5,7 @@ import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
 import com.arc.nas.model.request.app.media.SysFilePageable;
 import com.arc.nas.model.request.app.media.SysFileQuery;
-import com.arc.nas.service.system.common.SysFileDAO;
+import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.Assert;
 import com.arc.util.JSON;

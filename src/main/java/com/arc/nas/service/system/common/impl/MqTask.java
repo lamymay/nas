@@ -1,4 +1,4 @@
-package com.arc.nas.service.system.common;
+package com.arc.nas.service.system.common.impl;
 
 public class MqTask {
     private Long id;

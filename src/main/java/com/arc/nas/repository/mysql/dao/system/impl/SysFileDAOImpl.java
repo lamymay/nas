@@ -4,7 +4,7 @@ import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.request.app.media.SysFilePageable;
 import com.arc.nas.model.request.app.media.SysFileQuery;
 import com.arc.nas.repository.mysql.mapper.system.SysFileMapper;
-import com.arc.nas.service.system.common.SysFileDAO;
+import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.util.StringTool;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
