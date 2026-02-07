@@ -81,6 +81,7 @@ public class MediaRestController {
         log.info("updateAll={}", JSON.toJSONString(records));
         return ResponseEntity.ok(sysFileService.updateAllByCodes(records));
     }
+
     @GetMapping("/{code}")
     public ResponseEntity<Resource> getMediaFile(
             @PathVariable String code,
@@ -131,32 +132,6 @@ public class MediaRestController {
     }
 
     /**
-     * 内部类辅助 Spring 进行分段输出，避免手动控制流
-     */
-    private static class HttpRegionResource extends InputStreamResource {
-        private final Resource resource;
-        private final long start;
-        private final long length;
-
-        public HttpRegionResource(Resource resource, long start, long length) throws IOException {
-            super(resource.getInputStream()); // 占位，实际会被重写
-            this.resource = resource;
-            this.start = start;
-            this.length = length;
-        }
-
-        @Override
-        public InputStream getInputStream() throws IOException {
-            InputStream is = resource.getInputStream();
-            is.skip(start);
-            return new LimitedInputStream(is, length);
-        }
-    }
-
-
-    /// for CMS
-
-    /**
      * 扫描指定文件夹，将文件同步到数据库
      * todo use db config the config paths
      *
@@ -174,6 +149,9 @@ public class MediaRestController {
             return 0;
         }
     }
+
+
+    /// for CMS
 
     @GetMapping(value = "/cleanThumbnails")
     public ResponseEntity<CleanThumbnailsResult> cleanThumbnails(@RequestParam(required = false, defaultValue = "true") boolean moveToTrash) {
@@ -227,7 +205,6 @@ public class MediaRestController {
         return ResponseEntity.ok(finalMap);
     }
 
-
     @PostMapping("/addTag")
     public ResponseEntity<BatchResult> addTag(@RequestBody AddTagRequest addTagRequest) {
         log.info("updateAll={}", JSON.toJSONString(addTagRequest));
@@ -238,6 +215,29 @@ public class MediaRestController {
     public ResponseEntity<BatchResult> removeTags(@RequestBody RemoveTagBatchRequest request) {
         log.info("removeTags={}", JSON.toJSONString(request));
         return ResponseEntity.ok(mediaService.removeTags(request));
+    }
+
+    /**
+     * 内部类辅助 Spring 进行分段输出，避免手动控制流
+     */
+    private static class HttpRegionResource extends InputStreamResource {
+        private final Resource resource;
+        private final long start;
+        private final long length;
+
+        public HttpRegionResource(Resource resource, long start, long length) throws IOException {
+            super(resource.getInputStream()); // 占位，实际会被重写
+            this.resource = resource;
+            this.start = start;
+            this.length = length;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            InputStream is = resource.getInputStream();
+            is.skip(start);
+            return new LimitedInputStream(is, length);
+        }
     }
 
 

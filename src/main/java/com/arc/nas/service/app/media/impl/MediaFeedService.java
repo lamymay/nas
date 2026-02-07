@@ -49,7 +49,7 @@ public class MediaFeedService {
 
         // 结果json 组装
         MediaFeedDTO build = MediaFeedDTO.build(sysFiles, urlHelper.getPrefix());
-        build.setCursor(query.getCursor()+build.getTotalElements());
+        build.setCursor(query.getCursor() + build.getTotalElements());
         build.setServerTime(query.getStep());
         return build;
     }

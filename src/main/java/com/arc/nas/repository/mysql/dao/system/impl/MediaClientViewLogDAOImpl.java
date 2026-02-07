@@ -93,7 +93,7 @@ public class MediaClientViewLogDAOImpl extends ServiceImpl<MediaClientViewLogMap
     }
 
     @Override
-    public List<MediaClientViewLog> listAllByQuery(MediaClientViewLog   query) {
+    public List<MediaClientViewLog> listAllByQuery(MediaClientViewLog query) {
         return this.lambdaQuery()
                 .eq(query.getClientCode() != null, MediaClientViewLog::getClientCode, query.getClientCode())
                 .eq(query.getFileCode() != null, MediaClientViewLog::getFileCode, query.getFileCode())
@@ -108,17 +108,17 @@ public class MediaClientViewLogDAOImpl extends ServiceImpl<MediaClientViewLogMap
 
     @Override
     public MediaClientViewLog getByClientCodeAndFileCode(String clientCode, String fileCode) {
-        Assert.notNull(clientCode,"clientCode not allow null");
-        Assert.notNull(fileCode,"fileCode not allow null");
+        Assert.notNull(clientCode, "clientCode not allow null");
+        Assert.notNull(fileCode, "fileCode not allow null");
 
         try {
-           return this.lambdaQuery()
-                .eq(clientCode != null, MediaClientViewLog::getClientCode, clientCode)
-                .eq(fileCode != null, MediaClientViewLog::getFileCode, fileCode)
-                .select().one();
+            return this.lambdaQuery()
+                    .eq(clientCode != null, MediaClientViewLog::getClientCode, clientCode)
+                    .eq(fileCode != null, MediaClientViewLog::getFileCode, fileCode)
+                    .select().one();
 
         } catch (Exception exception) {
-            log.error("getByClientCodeAndFileCode",exception);
+            log.error("getByClientCodeAndFileCode", exception);
             throw exception;
         }
     }

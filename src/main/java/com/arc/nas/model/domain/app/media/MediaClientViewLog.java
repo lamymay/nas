@@ -17,7 +17,7 @@ public class MediaClientViewLog {
     public MediaClientViewLog() {
     }
 
-    public MediaClientViewLog(Long playAt,String clientCode , String fileCode) {
+    public MediaClientViewLog(Long playAt, String clientCode, String fileCode) {
         this.playAt = playAt;
         this.clientCode = clientCode;
         this.fileCode = fileCode;

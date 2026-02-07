@@ -29,6 +29,6 @@ public interface MediaClientViewLogDAO {
 
     List<MediaClientViewLog> listAll();
 
-    MediaClientViewLog getByClientCodeAndFileCode(String clientCode,String fileCode);
+    MediaClientViewLog getByClientCodeAndFileCode(String clientCode, String fileCode);
 
 }
