@@ -4,35 +4,18 @@ import com.arc.nas.model.domain.app.media.FileTagRelation;
 import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
 import com.arc.nas.repository.mysql.mapper.app.FileTagRelationMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-
 @Component
 public class FileTagRelationDAOImpl extends ServiceImpl<FileTagRelationMapper, FileTagRelation> implements FileTagRelationDAO {
 
-    final static String protocol = "http://";
     private static final Logger log = LoggerFactory.getLogger(FileTagRelationDAOImpl.class);
-
-    @Value("${spring.profiles:local}")
-    private String profile;
-
-    @Value("${server.port:80}")
-    private int port;
-
-    @Value("${server.servlet.context-path:/}")
-    private String contextPath;
-
-    public static void main(String[] args) {
-        System.out.println(4 * 1024);
-    }
 
     @Override
     public FileTagRelation saveOne(FileTagRelation record) {
@@ -80,16 +63,16 @@ public class FileTagRelationDAOImpl extends ServiceImpl<FileTagRelationMapper, F
 
 
     @Override
-    public Boolean deleteByFileCodes(Set<String> codes) {
+    public Boolean deleteByFileIds(Set<Long> codes) {
         if (codes == null || codes.isEmpty()) return false;
-        return this.lambdaUpdate().in(FileTagRelation::getFileCode, codes).remove();
+        return this.lambdaUpdate().in(FileTagRelation::getFileId, codes).remove();
 
     }
 
     @Override
-    public Boolean deleteByTagCodes(Set<String> codes) {
+    public Boolean deleteByTagIds(Set<Long> codes) {
         if (codes == null || codes.isEmpty()) return false;
-        return this.lambdaUpdate().in(FileTagRelation::getTagCode, codes).remove();
+        return this.lambdaUpdate().in(FileTagRelation::getTagId, codes).remove();
 
     }
 
@@ -100,41 +83,41 @@ public class FileTagRelationDAOImpl extends ServiceImpl<FileTagRelationMapper, F
     }
 
     @Override
-    public List<FileTagRelation> listByFileCode(String fileCode) {
-        if (fileCode == null) return Collections.emptyList();
+    public List<FileTagRelation> listByFileId(Long fileId) {
+        if (fileId == null) return Collections.emptyList();
         return this.lambdaQuery()
-                .eq(FileTagRelation::getFileCode, fileCode)
+                .eq(FileTagRelation::getFileId, fileId)
                 .select().list();
 
     }
 
     @Override
-    public List<FileTagRelation> listByTagCode(String tagCode) {
-        if (tagCode == null || StringUtils.isNotBlank(tagCode)) return Collections.emptyList();
+    public List<FileTagRelation> listByTagId(Long tagId) {
+        if (tagId == null) return Collections.emptyList();
         return this.lambdaQuery()
-                .eq(FileTagRelation::getTagCode, tagCode)
+                .eq(FileTagRelation::getTagId, tagId)
                 .select().list();
 
     }
 
     @Override
-    public List<FileTagRelation> listByFileCodeAndTagCode(String fileCode, String tagCode) {
-        if (fileCode == null || tagCode == null) return Collections.emptyList();
+    public List<FileTagRelation> listByFileIdAndTagId(Long fileId, Long tagId) {
+        if (fileId == null || tagId == null) return Collections.emptyList();
         return this.lambdaQuery()
-                .eq(FileTagRelation::getFileCode, fileCode)
-                .eq(FileTagRelation::getTagCode, tagCode)
+                .eq(FileTagRelation::getFileId, fileId)
+                .eq(FileTagRelation::getTagId, tagId)
                 .select().list();
 
     }
 
     @Override
-    public int deleteByFileCodesTagCodes(List<FileTagRelation> fileTagRelations) {
+    public int deleteByFileIdsTagIds(List<FileTagRelation> fileTagRelations) {
         if (fileTagRelations == null || fileTagRelations.isEmpty()) return 0;
         int count = 0;
         for (FileTagRelation fileTagRelation : fileTagRelations) {
             this.lambdaUpdate()
-                    .eq(FileTagRelation::getFileCode, fileTagRelation.getFileCode())
-                    .eq(FileTagRelation::getTagCode, fileTagRelation.getTagCode())
+                    .eq(FileTagRelation::getFileId, fileTagRelation.getFileId())
+                    .eq(FileTagRelation::getTagId, fileTagRelation.getTagId())
                     .remove();
             count = count + 1;
         }

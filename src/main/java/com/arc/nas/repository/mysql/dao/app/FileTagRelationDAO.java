@@ -15,30 +15,27 @@ public interface FileTagRelationDAO {
 
     boolean saveAll(List<FileTagRelation> records);
 
-    boolean update(FileTagRelation record);
-
-    boolean updateAll(List<FileTagRelation> records);
-
-
     int deleteById(Long id);
 
     int deleteByIds(List<Long> ids);
 
-    int deleteByFileCodesTagCodes(List<FileTagRelation> fileTagRelations);
+    Boolean deleteByFileIds(Set<Long> fileIds);
 
+    Boolean deleteByTagIds(Set<Long> tagIds);
+
+    int deleteByFileIdsTagIds(List<FileTagRelation> fileTagRelations);
+
+    boolean update(FileTagRelation record);
+
+    boolean updateAll(List<FileTagRelation> records);
 
     FileTagRelation getById(Long id);
 
-    Boolean deleteByFileCodes(Set<String> codes);
-
-    Boolean deleteByTagCodes(Set<String> codes);
-
-
     List<FileTagRelation> listAll();
 
-    List<FileTagRelation> listByFileCode(String fileCode);
+    List<FileTagRelation> listByFileId(Long fileId);
 
-    List<FileTagRelation> listByTagCode(String tagCode);
+    List<FileTagRelation> listByTagId(Long tagId);
 
-    List<FileTagRelation> listByFileCodeAndTagCode(String fileCode, String tagCode);
+    List<FileTagRelation> listByFileIdAndTagId(Long fileId, Long tagId);
 }

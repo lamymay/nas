@@ -1,6 +1,7 @@
 package com.arc.nas.service.system.common;
 
 import com.arc.nas.model.domain.system.common.SysFile;
+import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
 import com.arc.nas.model.request.app.media.SysFilePageable;
@@ -11,13 +12,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * JAVA项目是分层来写的，
  * 这是服务层，目的是处理业务，
  * 文件记录表相关服务
- *
- * @since 2018/12/21
  */
 public interface SysFileService {
 
@@ -75,6 +75,8 @@ public interface SysFileService {
      */
     Page<SysFile> listPage(SysFilePageable pageable);
 
+    MediaItemDTO getMediaItemDTOByIdOrCode(String code);
+
     File download(String url);
 
     SysFile getByName(String name);
@@ -92,6 +94,18 @@ public interface SysFileService {
 
     Map<String, Map<String, SysFile>> listAsTypeMapAllByQuery(SysFileQuery pageable);
 
+    // for CMS 支持标签逻辑
     List<SysFile> listAllByQuery(SysFileQuery pageable);
+
+    // for client
+    List<SysFile> listAllForClientByQuery(Set<String> mimeTypes, String keyword);
+
+//    /**
+//     * Filter specific mimeType is media file indexes.(ex:mp4 mp3 jpeg png...)
+//     *
+//     * @param filter
+//     * @return list not null
+//     */
+//    List<SysFile> listAndFilterAllByQuery(SysFileQuery filter);
 
 }

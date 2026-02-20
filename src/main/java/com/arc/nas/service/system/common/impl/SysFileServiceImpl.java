@@ -1,6 +1,8 @@
 package com.arc.nas.service.system.common.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.arc.nas.model.domain.system.common.SysFile;
+import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
 import com.arc.nas.model.request.app.media.SysFilePageable;
@@ -8,6 +10,7 @@ import com.arc.nas.model.request.app.media.SysFileQuery;
 import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.Assert;
+import com.arc.util.CodeUtil;
 import com.arc.util.JSON;
 import com.arc.util.file.FileSameCheckTool;
 import com.arc.util.file.FileUtil;
@@ -399,14 +402,28 @@ public class SysFileServiceImpl implements SysFileService {
      */
     private SysFile createSysFile(MultipartFile file, File toDiskPath) {
         //全名
-        String name = file.getOriginalFilename();
-        String displayName = FileUtil.getFilenameWithoutExtension(name);
-        String extension = FileUtil.getExtension(name);
-        String type = FileUtil.getFileType(extension);
+        String originalName = file.getOriginalFilename();
+        String displayName = FileUtil.getFilenameWithoutExtension(originalName);
+        String type = FileUtil.getFileType(FileUtil.getExtension(originalName));
         String sha256 = FileSameCheckTool.calculateHashSHA256(new File(toDiskPath.getPath()));
-        SysFile sysFile = new SysFile(sha256, displayName, extension, type, "", name, file.getSize(), toDiskPath.getPath());
-        sysFile.setRemark("文件上传");
+        SysFile sysFile = new SysFile();
+        sysFile.setOriginalName(originalName);
+        sysFile.setHash(sha256);
+        sysFile.setDisplayName(displayName);
+        sysFile.setMediaType(type);
+        sysFile.setLength(file.getSize());
+        sysFile.setPath(toDiskPath.getPath());
+        sysFile.setRemark("");
+        sysFile.setTaskStatus("PENDING"); // 初始状态
+        sysFile.setCode(CodeUtil.createCode16());
 
+        // 设置默认状态和初始值
+        sysFile.setOnMount(1); // 默认在线
+        sysFile.setStatus(1); // 正常可用
+        sysFile.setTagCount(0);
+        Date now = new Date();
+        sysFile.setCreateTime(now);
+        sysFile.setUpdateTime(now);
         return sysFile;
     }
 
@@ -451,6 +468,20 @@ public class SysFileServiceImpl implements SysFileService {
         }
 
         return sysFile;
+    }
+
+    @Override
+    public MediaItemDTO getMediaItemDTOByIdOrCode(String code) {
+        // 1. 查询数据库
+        SysFile sysFile = getByIdOrCode(code);
+        if (sysFile == null) {
+            return null;
+        }
+
+        // 2. 创建 DTO
+        MediaItemDTO dto = new MediaItemDTO();
+        BeanUtil.copyProperties(sysFile, dto);
+        return dto;
     }
 
     @Override
@@ -565,5 +596,27 @@ public class SysFileServiceImpl implements SysFileService {
     public List<SysFile> listAllByQuery(SysFileQuery query) {
         return sysFileDAO.listFilesByMediaTypesAndTags(query);
     }
+
+    @Override
+    public List<SysFile> listAllForClientByQuery(Set<String> mimeTypes, String keyword) {
+        //return sysFileDAO.listFilesByMediaTypesAndTags(mimeTypes);
+        return null;
+    }
+
+    //    @Override
+//    public List<SysFile> listAndFilterAllByQuery(SysFileQuery query) {
+//        if(query==null)return Collections.emptyList();
+//
+//        // 1 通过标签过滤
+//        if (query.getTagCodes() == null || query.getTagCodes().isEmpty()) {
+//            // 单主表查询
+//            return sysFileDAO.listFilesByMediaTypesAndTags(query);
+//
+//        }else {
+//            // 2 无需标签过滤
+//            return sysFileDAO.listFilesByMediaTypesAndTags(query);
+//
+//        }
+//    }
 }
 

@@ -11,9 +11,6 @@ import java.util.Date;
 /**
  * key-value表(偷懒用)
  * 注意 key是没有做唯一约束的, 要想定位唯一的一个键值对需要加上range
- *
- * @author may
- * @since 2021/04/14
  */
 @TableName("sys_key_value")
 public class KeyValue implements Serializable {

@@ -90,7 +90,7 @@ debug:当此属性设置为true时，将打印出logback内部日志信息，实
 
 
     <!--logback.LogbackDemo：类的全路径  范围有重叠的话，范围小的（更具体的），有效-->
-    <!--    <logger name="com.arc.nas.controller.data.system.common.MenuController" additivity="false" level="INFO"/>-->
+    <!--    <logger name="com.arc.nas.controller.system.common.MenuController" additivity="false" level="INFO"/>-->
     <logger name="com.baomidou.mybatisplus.core.MybatisConfiguration" additivity="false" level="INFO"/>
 
 

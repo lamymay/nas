@@ -1,6 +1,5 @@
 package com.arc.util;
 
-
 import com.arc.util.file.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +19,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author may
- * @since 2021.10.19 11:00 上午
- */
 public class StringTool {
 
     private static final Logger log = LoggerFactory.getLogger(StringTool.class);

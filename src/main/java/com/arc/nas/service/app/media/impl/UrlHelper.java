@@ -3,7 +3,7 @@ package com.arc.nas.service.app.media.impl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import static com.arc.nas.init.GetLocalIPAddress.localNetAddress;
+import static com.arc.util.GetLocalIPAddress.localNetAddress;
 
 @Service
 public class UrlHelper {
@@ -31,7 +31,7 @@ public class UrlHelper {
 
     public String getPrefix() {
         if (prefix == null) {
-            prefix = "PROTOCOLHOST:PORTCONTEXT_PATH/api/media/CODE"
+            prefix = "PROTOCOLHOST:PORTCONTEXT_PATH/CODE"
                     .replace("PROTOCOL", getProtocol())
                     .replace("HOST", localNetAddress)
                     .replace("PORT", String.valueOf(port))

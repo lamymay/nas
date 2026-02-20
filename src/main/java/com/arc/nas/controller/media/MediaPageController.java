@@ -1,4 +1,4 @@
-package com.arc.nas.controller.data.app.media;
+package com.arc.nas.controller.media;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,11 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
  */
 @Controller
 public class MediaPageController {
-
-    @GetMapping("/media/home")
-    public String homeHome() {
-        return "media/media_home";
-    }
 
     @GetMapping("/media/video")
     public String media_video() {

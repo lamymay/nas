@@ -6,9 +6,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @since 2020/4/16 23:31
- */
 public interface KeyValueService {
 
     KeyValue save(KeyValue keyValue);

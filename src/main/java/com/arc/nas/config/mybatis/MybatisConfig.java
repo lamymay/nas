@@ -18,9 +18,6 @@ import javax.sql.DataSource;
 
 /**
  * Mybatis相关配置
- *
- * @author may
- * @since 2022.02.26
  */
 
 @Configuration

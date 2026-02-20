@@ -1,9 +1,5 @@
 package com.arc.nas.config.mybatis.type.handler;
 
-/**
- * @since 2021/1/12 4:52 下午
- */
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

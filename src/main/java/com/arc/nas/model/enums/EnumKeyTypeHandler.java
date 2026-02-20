@@ -9,9 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * http://mybatis.org/mybatis-3/zh/configuration.html#typeHandlers
- *
- * @since 2020/4/17 0:07
+ * @link {http://mybatis.org/mybatis-3/zh/configuration.html#typeHandlers}
  */
 public class EnumKeyTypeHandler extends BaseTypeHandler<EnumNumberInterface> {
 

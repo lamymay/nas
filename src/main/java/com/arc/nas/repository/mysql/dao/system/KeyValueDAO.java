@@ -8,9 +8,6 @@ import java.util.Map;
 
 /**
  * DAO封装
- *
- * @author may
- * @since 2021.12.09 11:59 下午
  */
 public interface KeyValueDAO {
 

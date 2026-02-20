@@ -1,4 +1,4 @@
-package com.arc.nas.init;
+package com.arc.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -11,30 +11,44 @@ public class FileTagRelation {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String fileCode;
-    private String tagCode;
+    private Long tagId;
+    private Long fileId;
 
     public FileTagRelation() {
     }
 
-    public FileTagRelation(String fileCode, String tagCode) {
-        this.fileCode = fileCode;
-        this.tagCode = tagCode;
+    public FileTagRelation(Long id, Long fileId, Long tagId) {
+        this.id = id;
+        this.fileId = fileId;
+        this.tagId = tagId;
     }
 
-    public String getFileCode() {
-        return fileCode;
+    public FileTagRelation(Long fileId, Long tagId) {
+        this.fileId = fileId;
+        this.tagId = tagId;
     }
 
-    public void setFileCode(String fileCode) {
-        this.fileCode = fileCode;
+    public Long getId() {
+        return id;
     }
 
-    public String getTagCode() {
-        return tagCode;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setTagCode(String tagCode) {
-        this.tagCode = tagCode;
+    public Long getFileId() {
+        return fileId;
+    }
+
+    public void setFileId(Long fileId) {
+        this.fileId = fileId;
+    }
+
+    public Long getTagId() {
+        return tagId;
+    }
+
+    public void setTagId(Long tagId) {
+        this.tagId = tagId;
     }
 }

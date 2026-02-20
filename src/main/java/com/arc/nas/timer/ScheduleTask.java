@@ -3,9 +3,7 @@ package com.arc.nas.timer;
 import com.arc.nas.model.domain.app.media.MediaFileResource;
 import com.arc.nas.model.request.app.media.GenerateThumbnailConfig;
 import com.arc.nas.model.request.app.media.GenerateThumbnailResult;
-import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.nas.service.app.media.MediaResource;
-import com.arc.nas.service.app.media.MediaService;
 import com.arc.util.JSON;
 import com.arc.util.StringTool;
 import org.slf4j.Logger;
@@ -23,17 +21,10 @@ public class ScheduleTask {
 
     private static final Logger log = LoggerFactory.getLogger(ScheduleTask.class);
     private final MediaResource mediaResource;
-    private final SysFileDAO sysFileDAO;
-    private final MediaService mediaService;
-    //SysFileFolder
     long taskEnd = System.currentTimeMillis();
 
-    public ScheduleTask(MediaResource mediaResource,
-                        SysFileDAO sysFileDAO,
-                        MediaService mediaService) {
+    public ScheduleTask(MediaResource mediaResource) {
         this.mediaResource = mediaResource;
-        this.sysFileDAO = sysFileDAO;
-        this.mediaService = mediaService;
     }
 
     // 方式 A：使用注解（最简单） fixedDelay: 上一次任务结束到下一次任务开始的间隔
@@ -50,18 +41,18 @@ public class ScheduleTask {
 
         // 2 scan & index
         stopWatch.start("scan & index");
-        mediaService.scan(scanFolders.toArray(new String[0]));
+        mediaResource.scan(scanFolders.toArray(new String[0]));
         stopWatch.stop();
 
         // 3 hash
         stopWatch.start("hash");
-        mediaService.updateHash(false);
+        mediaResource.updateHash(false);
         stopWatch.stop();
 
         // 4 generateThumbnails (by index db)
         stopWatch.start("generateThumbnails");
         try {
-            GenerateThumbnailResult generateThumbnailResult = mediaService.generateThumbnails(new GenerateThumbnailConfig());
+            GenerateThumbnailResult generateThumbnailResult = mediaResource.generateThumbnails(new GenerateThumbnailConfig());
             log.info("GenerateThumbnailResult={} \n ", JSON.toJSONString(generateThumbnailResult));
         } catch (Exception exception) {
             log.error("GenerateThumbnailResult 处理缩略图异常!（建议检查环境ffmpeg是否配置ok）", exception);

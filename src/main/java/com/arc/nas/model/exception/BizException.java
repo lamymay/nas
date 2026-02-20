@@ -7,9 +7,6 @@ import java.net.UnknownHostException;
 
 /**
  * 业务运行时异常
- *
- * @author may
- * @since 2018/04/10
  */
 public class BizException extends RuntimeException implements BaseException {
 

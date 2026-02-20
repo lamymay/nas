@@ -9,9 +9,13 @@ public class SysFileQuery {
 
     //VIDEO/IMAGE/FILE/THUMBNAIL
     private Set<String> mediaTypes;
-    private Set<String> tagCodes;
 
-    private String userId;
+    // 具体特定的文件格式
+    private Set<String> mimeTypes;
+
+    private Set<Long> tagIds;
+
+//    @Deprecated private String userId;
 
     // 新增：是否只显示未打标签的文件 仅限未标记
     private boolean onlyUntagged = false;
@@ -40,21 +44,12 @@ public class SysFileQuery {
         this.mediaTypes = mediaTypes;
     }
 
-
-    public String getUserId() {
-        return userId;
+    public Set<Long> getTagIds() {
+        return tagIds;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public Set<String> getTagCodes() {
-        return tagCodes;
-    }
-
-    public void setTagCodes(Set<String> tagCodes) {
-        this.tagCodes = tagCodes;
+    public void setTagIds(Set<Long> tagIds) {
+        this.tagIds = tagIds;
     }
 
     public boolean isOnlyUntagged() {
@@ -63,5 +58,13 @@ public class SysFileQuery {
 
     public void setOnlyUntagged(boolean onlyUntagged) {
         this.onlyUntagged = onlyUntagged;
+    }
+
+    public Set<String> getMimeTypes() {
+        return mimeTypes;
+    }
+
+    public void setMimeTypes(Set<String> mimeTypes) {
+        this.mimeTypes = mimeTypes;
     }
 }

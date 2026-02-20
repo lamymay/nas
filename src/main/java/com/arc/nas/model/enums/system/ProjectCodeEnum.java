@@ -17,8 +17,6 @@ import com.arc.nas.model.enums.EnumNumberInterface;
  * <p>
  * ：）
  * 2）注意： ####  看标题 ！！！
- *
- * @since 2018/04/10
  */
 public enum ProjectCodeEnum implements EnumNumberInterface {
     //=====================================================

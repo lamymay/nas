@@ -1,4 +1,4 @@
-package com.arc.nas.controller.data.system;
+package com.arc.nas.controller.system;
 
 import com.arc.nas.model.dto.ArcRuntimeEnvironment;
 import com.arc.util.JSON;

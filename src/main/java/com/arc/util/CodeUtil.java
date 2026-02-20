@@ -7,9 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-/**
- * @since 2020/5/10 2:54 下午
- */
+
 public class CodeUtil {
 
     public static final String ONE_ONE = "11";

@@ -4,23 +4,23 @@ import java.util.List;
 
 public class RemoveTagRequest {
 
-    private String fileCode;
+    private Long fileId;
 
-    private List<String> tagCodes;
+    private List<Long> tagIds;
 
-    public String getFileCode() {
-        return fileCode;
+    public Long getFileId() {
+        return fileId;
     }
 
-    public void setFileCode(String fileCode) {
-        this.fileCode = fileCode;
+    public void setFileId(Long fileId) {
+        this.fileId = fileId;
     }
 
-    public List<String> getTagCodes() {
-        return tagCodes;
+    public List<Long> getTagIds() {
+        return tagIds;
     }
 
-    public void setTagCodes(List<String> tagCodes) {
-        this.tagCodes = tagCodes;
+    public void setTagIds(List<Long> tagIds) {
+        this.tagIds = tagIds;
     }
 }

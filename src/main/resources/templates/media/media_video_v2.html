@@ -41,11 +41,11 @@
     let cursor = 1;
     const step = 20;
     const container = document.getElementById('feedContainer');
-    const REPORT_URL = 'https://172.20.10.5:9000/nas/api/report';
+    const REPORT_URL = '/nas/feed/report';
 
     async function loadMore() {
         try {
-            const res = await fetch(`https://172.20.10.5:9000/nas/feed?cursor=${cursor}&step=${step}&contentType=VIDEO&deviceId=1`);
+            const res = await fetch(`/nas/feed?cursor=${cursor}&step=${step}&contentType=VIDEO&deviceId=1`);
             const data = await res.json();
             if (data.content && data.content.length > 0) {
                 renderMedia(data.content);

@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @Component
 public class MediaTagDAOImpl extends ServiceImpl<MediaTagMapper, MediaTag> implements MediaTagDAO {
 
@@ -35,7 +34,7 @@ public class MediaTagDAOImpl extends ServiceImpl<MediaTagMapper, MediaTag> imple
     @Override
     public boolean update(MediaTag record) {
         if (record == null) throw new RuntimeException("保存数据预期非空");
-        if (record.getCode() == null) throw new RuntimeException("保存数据code预期非空");
+        if (record.getId() == null) throw new RuntimeException("保存数据code预期非空");
         return this.updateById(record);
     }
 
@@ -80,45 +79,20 @@ public class MediaTagDAOImpl extends ServiceImpl<MediaTagMapper, MediaTag> imple
         return resultMap;
     }
 
+    @Override
+    public List<MediaTag> list(MediaTagRequest query) {
+        if (query == null) return Collections.emptyList();
+        return this.lambdaQuery().like(StringUtils.isNotBlank(query.getDisplayName()), MediaTag::getDisplayName, query.getDisplayName()).select().list();
+    }
 
     @Override
     public MediaTag getById(Long id) {
         return this.getBaseMapper().selectById(id);
     }
 
-
-    @Override
-    public List<MediaTag> list(MediaTagRequest query) {
-        if (query == null) return Collections.emptyList();
-        return this.lambdaQuery()
-                .like(StringUtils.isNotBlank(query.getDisplayName()), MediaTag::getDisplayName, query.getDisplayName())
-                .select().list();
-
-    }
-
-
-    //        LambdaQueryWrapper<MediaTag> queryWrapper = new LambdaQueryWrapper<>();
-//        queryWrapper.eq(MediaTag::getKey, key);
-    @Override
-    public MediaTag getByCode(String code) {
-        if (code == null) return null;
-
-        return this.lambdaQuery()
-                .eq(MediaTag::getCode, code)
-                .select().one();
-//        QueryWrapper<MediaTag> queryWrapper = new QueryWrapper<>();
-//        queryWrapper.lambda().eq(MediaTag::getKey, key)
-//                .select(MediaTag::getId, MediaTag::getCreateTime, MediaTag::getUpdateTime,
-//                        MediaTag::getKey, MediaTag::getValue, MediaTag::getRange,
-//                        MediaTag::getRemark, MediaTag::getTtl);
-//        return this.getOne(queryWrapper);
-    }
-
-
     @Override
     public IPage<MediaTag> listPage(SysFilePageable pageable) {
-        return this.lambdaQuery()
-                .like(StringUtils.isNotBlank(pageable.getKeyword()), MediaTag::getDisplayName, pageable.getKeyword())
+        return this.lambdaQuery().like(StringUtils.isNotBlank(pageable.getKeyword()), MediaTag::getDisplayName, pageable.getKeyword())
 //                .orderByDesc(SysFile::getCreateTime)
                 .page(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(pageable.getPageNumber(), pageable.getPageSize()));
 

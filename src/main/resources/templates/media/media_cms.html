@@ -173,12 +173,12 @@
     </div>
 </div>
 
-<div>
+<div style="padding: 10px;">
     <input id="newTagName" placeholder="新标签名称" type="text"/>
     <button onclick="createTag()">创建标签</button>
 </div>
 
-<div id="tags-search-bar">
+<div id="tags-search-bar" style="padding: 10px;">
     <input id="tagKeyword" placeholder="搜索标签" type="text"/>
     <button onclick="clearTagSearch()">清空标签条件</button>
     <button onclick="fetchTags()">通过标签过滤</button>
@@ -194,19 +194,19 @@
 
 <script>
     const API = {
-        updateTags: "/nas/api/media/addTag",
-        listMedia: "/nas/api/media/list",
-        removeTags: "/nas/api/media/removeTags",
-        listTags: "/nas/api/media/tag/list",
-        createTag: "/nas/api/media/tag/saves",
-        matchThumbnails: "/nas/api/media/matchThumbnails",
-        saveResource: "/nas/media/resource/saves",
-        listResource: "/nas/media/resource/listAll",
-        removeResource: "/nas/media/resource/removes"
+        addTag: "/nas/media/cms/addTag",
+        listMedia: "/nas/media/cms/list",
+        removeTags: "/nas/media/cms/removeTags",
+        listTags: "/nas/media/cms/tag/list",
+        createTag: "/nas/media/cms/tag/saves",
+        matchThumbnails: "/nas/media/cms/matchThumbnails",
+        saveResource: "/nas/media/cms/resource/saves",
+        listResource: "/nas/media/cms/resource/listAll",
+        removeResource: "/nas/media/cms/removes"
     };
 
     let tagGroups = [];
-    let selectedMedia = new Set();
+    let selectedMediaIds = new Set(); // 存储 Long 类型的 ID
     let selectedMediaTypes = new Set(["VIDEO", "IMAGE"]);
     let originalPaths = [];
 
@@ -245,12 +245,15 @@
 
             document.querySelectorAll(".media-item").forEach(item => {
                 const rect = item.getBoundingClientRect();
-                const overlap = !(rect.right < x || rect.left > x + w || rect.bottom < y || rect.top > y + h);
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
+                // 修正坐标计算，考虑滚动
+                const overlap = !(rect.right + scrollX < x || rect.left + scrollX > x + w || rect.bottom + scrollY < y || rect.top + scrollY > y + h);
                 if (overlap) {
-                    selectedMedia.add(item.dataset.code);
+                    selectedMediaIds.add(Number(item.dataset.id));
                     item.classList.add("selected");
                 } else if (!e.ctrlKey) {
-                    selectedMedia.delete(item.dataset.code);
+                    selectedMediaIds.delete(Number(item.dataset.id));
                     item.classList.remove("selected");
                 }
             });
@@ -272,7 +275,6 @@
         setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 300); }, duration);
     }
 
-    /* 设置弹出层管理 */
     function toggleSettings(show) {
         document.getElementById("settings-modal").style.display = show ? "block" : "none";
         if (show) fetchPathsToTextarea();
@@ -354,7 +356,8 @@
         tagGroups.forEach(tag => {
             const el = document.createElement("div");
             el.className = "tag-group";
-            el.dataset.tag = tag.code;
+            // 绑定 id 供 Long 类型使用
+            el.dataset.id = tag.id;
             el.textContent = tag.displayName;
             el.onclick = () => { el.classList.toggle("selected"); loadMedia(); };
             el.ondrop = drop;
@@ -389,19 +392,20 @@
 
     function selectAllMedia() {
         document.querySelectorAll(".media-item").forEach(item => {
-            selectedMedia.add(item.dataset.code);
+            selectedMediaIds.add(Number(item.dataset.id));
             item.classList.add("selected");
         });
     }
 
     function clearAllSelection() {
-        selectedMedia.clear();
+        selectedMediaIds.clear();
         document.querySelectorAll(".media-item").forEach(item => item.classList.remove("selected"));
     }
 
     function loadMedia(onlyUntagged = true) {
         const keyword = document.getElementById("searchKeyword").value.trim();
-        const tagCodes = Array.from(document.querySelectorAll("#tags-area .tag-group.selected")).map(el => el.dataset.tag);
+        // 如果后端 Query 还没改，这里仍用 tagCodes，否则请改为 tagIds
+        const tagIds = Array.from(document.querySelectorAll("#tags-area .tag-group.selected")).map(el => Number(el.dataset.id));
         fetch(API.listMedia, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -409,7 +413,7 @@
                 pageNumber: 1, pageSize: 90000,
                 keyword: keyword || null,
                 mediaTypes: Array.from(selectedMediaTypes),
-                tagCodes: tagCodes.length ? tagCodes : null,
+                tagIds: tagIds.length ? tagIds : null,
                 onlyUntagged
             })
         }).then(r => r.json()).then(data => renderMediaList(data));
@@ -425,8 +429,8 @@
             Object.keys(data[type]).forEach(key => {
                 const media = data[type][key];
                 const el = document.createElement("div");
-                el.className = "media-item" + (selectedMedia.has(media.code) ? " selected" : "");
-                el.dataset.code = media.code;
+                el.className = "media-item" + (selectedMediaIds.has(Number(media.id)) ? " selected" : "");
+                el.dataset.id = media.id; // 关键：存储 ID
                 el.draggable = true;
                 el.onclick = () => toggleSelect(el);
                 el.ondragstart = drag;
@@ -438,54 +442,62 @@
     }
 
     function drag(ev) {
-        const code = ev.currentTarget.dataset.code;
-        if (!selectedMedia.has(code)) {
+        const id = Number(ev.currentTarget.dataset.id);
+        if (!selectedMediaIds.has(id)) {
             clearAllSelection();
-            selectedMedia.add(code);
+            selectedMediaIds.add(id);
             ev.currentTarget.classList.add("selected");
         }
-        const codesToTransfer = Array.from(selectedMedia);
-        ev.dataTransfer.setData("application/json", JSON.stringify(codesToTransfer));
+        const idsToTransfer = Array.from(selectedMediaIds);
+        ev.dataTransfer.setData("application/json", JSON.stringify(idsToTransfer));
         ev.dataTransfer.effectAllowed = "move";
     }
 
     function drop(ev) {
         ev.preventDefault();
-        const tagCode = ev.currentTarget.dataset.tag;
-        let codes = [];
+        const tagId = Number(ev.currentTarget.dataset.id); // 获取 Long ID
+        let ids = [];
         try {
             const data = ev.dataTransfer.getData("application/json");
-            if (data) codes = JSON.parse(data);
+            if (data) ids = JSON.parse(data).map(Number); // 确保是数字数组
         } catch (e) {}
 
-        if (!codes || codes.length === 0) codes = Array.from(selectedMedia);
-        if (!codes || codes.length === 0) return;
+        if (!ids || ids.length === 0) ids = Array.from(selectedMediaIds);
+        if (!ids || ids.length === 0 || !tagId) return;
 
-        fetch(API.updateTags, {
+        // 适配后端 AddTagInner 模型
+        const payload = {
+            tagId: tagId,
+            fileIds: ids
+        };
+
+        fetch(API.addTag, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tagCode, fileCodes: codes })
+            body: JSON.stringify(payload)
         })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
-                showToast(`打标签成功，共 ${codes.length} 个文件`);
-                codes.forEach(code => {
-                    const el = document.querySelector(`.media-item[data-code='${code}']`);
+                showToast(`打标签成功，共 ${ids.length} 个文件`);
+                ids.forEach(id => {
+                    const el = document.querySelector(`.media-item[data-id='${id}']`);
                     if (el) el.remove();
-                    selectedMedia.delete(code);
+                    selectedMediaIds.delete(id);
                 });
+            } else {
+                showToast("打标签失败: " + (res.message || "未知错误"));
             }
         });
     }
 
     function toggleSelect(el) {
-        const code = el.dataset.code;
-        if (selectedMedia.has(code)) {
-            selectedMedia.delete(code);
+        const id = Number(el.dataset.id);
+        if (selectedMediaIds.has(id)) {
+            selectedMediaIds.delete(id);
             el.classList.remove("selected");
         } else {
-            selectedMedia.add(code);
+            selectedMediaIds.add(id);
             el.classList.add("selected");
         }
     }
@@ -503,19 +515,19 @@
 
     function selectAllByKeyboard() {
         document.querySelectorAll(".media-item").forEach(item => {
-            selectedMedia.add(item.dataset.code);
+            selectedMediaIds.add(Number(item.dataset.id));
             item.classList.add("selected");
         });
     }
 
     function invertSelection() {
         document.querySelectorAll(".media-item").forEach(item => {
-            const code = item.dataset.code;
-            if (selectedMedia.has(code)) {
-                selectedMedia.delete(code);
+            const id = Number(item.dataset.id);
+            if (selectedMediaIds.has(id)) {
+                selectedMediaIds.delete(id);
                 item.classList.remove("selected");
             } else {
-                selectedMedia.add(code);
+                selectedMediaIds.add(id);
                 item.classList.add("selected");
             }
         });

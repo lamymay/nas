@@ -29,14 +29,13 @@ https://172.20.10.5:9000/nas/media/image
 https://172.20.10.5:9000/nas/media/video
 
 
-
-
-
 ## 4. todo
 
 ```text
 . 视频文件格式的支持问题（转码到统一格式）
 .  缩略图生成的触发时机逻辑优化
 .  db 模拟mq处理
+.  todo cancelTask
+
 
 ```

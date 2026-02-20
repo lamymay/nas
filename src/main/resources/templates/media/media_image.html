@@ -133,6 +133,14 @@
      style="position: fixed; top: 10%; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none;"></div>
 
 <script>
+    /**
+     * 配置信息提取
+     */
+    const CONFIG = {
+        FETCH_HOME_API: '/nas/media/home?mediaType=IMAGE',
+        DELETE_API_BASE: '/nas/media/remove/'
+    };
+
     let imageItems = [];
     let currentIndex = 0;
     let startX = 0;
@@ -141,7 +149,7 @@
     // 加载数据
     async function loadMedia() {
         try {
-            const response = await fetch('/nas/api/media/home?mediaType=IMAGE');
+            const response = await fetch(CONFIG.FETCH_HOME_API);
             const data = await response.json();
             const grid = document.getElementById('mediaGrid');
             grid.innerHTML = '';
@@ -152,6 +160,7 @@
                 const card = document.createElement('div');
                 card.className = 'media-card';
                 const img = document.createElement('img');
+                // 保持原有的渲染逻辑
                 img.src = (item.thumbnails && item.thumbnails.length > 0 && item.thumbnails[0])
                             ? item.thumbnails[0] : item.url;
                 img.alt = item.displayName;
@@ -185,7 +194,7 @@
                 setTimeout(() => { deleteConfirm = false; deleteBtn.textContent = '删除'; }, 3000);
             } else {
                 try {
-                    const res = await fetch(`/nas/api/media/remove/${item.code}`);
+                    const res = await fetch(`${CONFIG.DELETE_API_BASE}${item.code}`);
                     const success = await res.json();
                     if(success){
                         showToast('删除成功');
@@ -246,19 +255,14 @@
 
     // --- 核心修复：点击逻辑 ---
     modal.addEventListener('click', (e) => {
-        // 1. 如果点的是最外层背景（modal）或内容容器（modalContent）
-        // 而不是图片或信息栏，则直接关闭
         if (e.target === modal || e.target === modalContent) {
             closeModal();
             return;
         }
-
-        // 2. 如果点击了图片或信息栏区域，执行切换判定
         const rect = modal.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const width = rect.width;
 
-        // 左半屏切换上一张，右半屏切换下一张
         if (x < width / 2) {
             showPrev();
         } else {

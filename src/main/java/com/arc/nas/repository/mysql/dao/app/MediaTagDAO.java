@@ -11,9 +11,6 @@ import java.util.Map;
 
 /**
  * DAO封装
- *
- * @author may
- * @since 2021.12.09 11:59 下午
  */
 public interface MediaTagDAO {
 
@@ -30,8 +27,6 @@ public interface MediaTagDAO {
     Map<String, BatchItemResult> deleteByCodes(List<String> codes);
 
     MediaTag getById(Long id);
-
-    MediaTag getByCode(String code);
 
     List<MediaTag> list(MediaTagRequest query);
 

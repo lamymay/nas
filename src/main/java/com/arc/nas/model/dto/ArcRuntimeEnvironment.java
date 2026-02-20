@@ -8,9 +8,6 @@ import java.util.Map;
 
 /**
  * 项目运行时环境数据封装
- *
- * @author may
- * @since 2021/4/14 14:39
  */
 public class ArcRuntimeEnvironment {
 

@@ -14,8 +14,9 @@ import java.util.Date;
 @TableName("media_tag")
 public class MediaTag implements Serializable {
 
-    @TableId(value = "code", type = IdType.ASSIGN_UUID)
-    private String code;//编号
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
     private Date createTime;// 创建时间
     private Date updateTime;// 更新时间
     private String displayName;// 显示名称（可为空，默认=originalName）
@@ -27,17 +28,12 @@ public class MediaTag implements Serializable {
 
     }
 
-
-    public MediaTag(String path, String code) {
-        this.code = code;
+    public Long getId() {
+        return id;
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Date getCreateTime() {

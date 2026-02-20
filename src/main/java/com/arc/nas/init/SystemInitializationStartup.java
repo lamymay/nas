@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 
-import static com.arc.nas.init.GetLocalIPAddress.getLocalIPAddress;
+import static com.arc.util.GetLocalIPAddress.getLocalIPAddress;
 
 
 /**

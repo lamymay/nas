@@ -7,7 +7,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
-import static com.arc.nas.init.GetLocalIPAddress.localNetAddress;
+import static com.arc.util.GetLocalIPAddress.localNetAddress;
 import static org.springframework.util.StringUtils.cleanPath;
 
 /**

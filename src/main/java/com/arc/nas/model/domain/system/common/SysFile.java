@@ -15,8 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -24,44 +22,6 @@ import java.util.Map;
  */
 @TableName("sys_file")
 public class SysFile implements Serializable {
-
-    private static final Map<String, String> EXTENSION_TO_MIME;
-
-    static {
-        EXTENSION_TO_MIME = new HashMap<>();
-        // 视频
-        EXTENSION_TO_MIME.put("mp4", "video/mp4");
-        EXTENSION_TO_MIME.put("mkv", "video/x-matroska");
-        EXTENSION_TO_MIME.put("avi", "video/x-msvideo");
-        EXTENSION_TO_MIME.put("mov", "video/quicktime");
-        EXTENSION_TO_MIME.put("flv", "video/x-flv");
-        EXTENSION_TO_MIME.put("wmv", "video/x-ms-wmv");
-        // 音频
-        EXTENSION_TO_MIME.put("mp3", "audio/mpeg");
-        EXTENSION_TO_MIME.put("wav", "audio/wav");
-        EXTENSION_TO_MIME.put("flac", "audio/flac");
-        EXTENSION_TO_MIME.put("aac", "audio/aac");
-        EXTENSION_TO_MIME.put("ogg", "audio/ogg");
-        // 图片
-        EXTENSION_TO_MIME.put("jpg", "image/jpeg");
-        EXTENSION_TO_MIME.put("jpeg", "image/jpeg");
-        EXTENSION_TO_MIME.put("png", "image/png");
-        EXTENSION_TO_MIME.put("gif", "image/gif");
-        EXTENSION_TO_MIME.put("bmp", "image/bmp");
-        EXTENSION_TO_MIME.put("webp", "image/webp");
-        // 文档
-        EXTENSION_TO_MIME.put("pdf", "application/pdf");
-        EXTENSION_TO_MIME.put("txt", "text/plain");
-        EXTENSION_TO_MIME.put("csv", "text/csv");
-        EXTENSION_TO_MIME.put("doc", "application/msword");
-        EXTENSION_TO_MIME.put("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        EXTENSION_TO_MIME.put("xls", "application/vnd.ms-excel");
-        EXTENSION_TO_MIME.put("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        EXTENSION_TO_MIME.put("ppt", "application/vnd.ms-powerpoint");
-        EXTENSION_TO_MIME.put("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
-        // 默认
-        EXTENSION_TO_MIME.put("default", "application/octet-stream");
-    }
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
@@ -71,18 +31,16 @@ public class SysFile implements Serializable {
     private String hash;// sha256
     private String originalName;// 文件真实存在的名称（不含路径）
     private String displayName;// 显示名称（可为空，默认=originalName）
-    private String suffix;// 后缀
     private String mediaType;//  业务分类：视频/音频/图片  类型 文件还是图片 VIDEO/IMAGE/FILE/THUMBNAIL  一般来说图片是可以直接预览的,
-    private String mimeType;// MIME 是标准化的 由 IANA 管理，浏览器、播放器、server 都需要 MIME。Content-Type: video/mp4
     private String storageType;// LOCAL / OSS / NAS
     private String path;// 文件本地存放位置--本地存储的情况应该是服务器的绝对路径
     private Long length;// 文件大小 单位byte
     private Integer version;// 版本信息id
-    private Integer status;// 逻辑删除用的标识 0=删除的不可使用的
     private Integer referenceCount;// 引用计数 reference_count
-    private String remark;// 描述
+    private String remark;// 描述｜错误简短描述
+    private Integer status;// 逻辑删除用的标识 0=删除的不可使用的
     /*
-    | 状态                   | 含义          |
+    | 状态                  | 含义          |
     | -------------------- | -------------- |
     | PENDING              | 文件刚扫描，未处理|
     | THUMBNAIL_GENERATING | 缩略图生成中     |
@@ -90,17 +48,18 @@ public class SysFile implements Serializable {
     | TRANSCODE_PENDING    | 转码待处理      |
     | TRANSCODING          | 转码中          |
     | TRANSCODE_DONE       | 转码完成        |
-    | HASH_DONE       | HASH完成        |
-    | END       | END        |
+    | HASH_DONE            | HASH完成        |
+    | END                  | END            |
     | FAILED               | 处理失败（缩略图/转码失败） |
     */
     private String taskStatus;//标识系统对文件的处理流程
     private String thumbnail;// 多个缩略图 用英文逗号分割
-    private String author;
 
 
     private String maturityLevel;//内容敏感度 “年龄分级” “PG-13”、“R”、“18+” 暴力、血腥等
     private Long duration;//持续时间
+    private Integer tagCount;//标签计数
+    private Integer onMount;    // 0:离线 1:在线（默认） (磁盘挂载状态)
 
     public SysFile() {
 
@@ -129,12 +88,6 @@ public class SysFile implements Serializable {
 
         this.originalName = originalFilename;
         this.setRemark("MultipartFile");
-        String suffix = "";
-        int lastIndexOf = originalFilename.lastIndexOf(".");
-        if (lastIndexOf != -1) {
-            suffix = originalFilename.substring(lastIndexOf + 1);
-        }
-        this.suffix = suffix;
         this.length = file.getSize();
         this.path = toDiskPath;
 //        int index = toDiskPath.lastIndexOf(File.separator);
@@ -147,21 +100,14 @@ public class SysFile implements Serializable {
 
     }
 
-    @Deprecated
-    public SysFile(String code, String displayName, String extension, String mediaType, String remark, String originalName, Long length, String path) {
-        this(code, displayName, extension, mediaType, remark, originalName, length, path, null, null);
-    }
-
-    public SysFile(Date createTime, Date updateTime, String code, String hash, String originalName, String displayName, String suffix, String mediaType, String mimeType, String storageType, String path, Long length, Integer version, Integer status, Integer referenceCount, String remark, String taskStatus) {
+    public SysFile(Date createTime, Date updateTime, String code, String hash, String originalName, String displayName, String mediaType, String storageType, String path, Long length, Integer version, Integer status, Integer referenceCount, String remark, String taskStatus) {
         this.createTime = createTime;
         this.updateTime = updateTime;
         this.code = code;
         this.hash = hash;
         this.originalName = originalName;
         this.displayName = displayName;
-        this.suffix = suffix;
         this.mediaType = mediaType;
-        this.mimeType = mimeType;
         this.storageType = storageType;
         this.path = path;
         this.length = length;
@@ -172,16 +118,12 @@ public class SysFile implements Serializable {
         this.taskStatus = taskStatus;
     }
 
-    public SysFile(String code, String hash, String originalName, String displayName, String suffix, String mediaType, String mimeType, String storageType, String path, Long length, Integer version, Integer status, Integer referenceCount, String remark, String taskStatus) {
-        this.createTime = createTime;
-        this.updateTime = updateTime;
+    public SysFile(String code, String hash, String originalName, String displayName, String mediaType, String storageType, String path, Long length, Integer version, Integer status, Integer referenceCount, String remark, String taskStatus) {
         this.code = code;
         this.hash = hash;
         this.originalName = originalName;
         this.displayName = displayName;
-        this.suffix = suffix;
         this.mediaType = mediaType;
-        this.mimeType = mimeType;
         this.storageType = storageType;
         this.path = path;
         this.length = length;
@@ -193,19 +135,16 @@ public class SysFile implements Serializable {
     }
 
     @Deprecated
-    public SysFile(String code, String displayName, String suffix, String mediaType, String remark, String originalName, Long length, String path, Integer version, Integer status) {
+    public SysFile(String code, String displayName, String mediaType, String remark, String originalName, Long length, String path, Integer version, Integer status) {
         Date now = new Date();
         this.createTime = now;
         this.updateTime = now;
-
         this.code = code;
         this.displayName = displayName;
-        this.suffix = suffix;
         this.mediaType = mediaType;
         this.remark = remark;
         this.originalName = originalName;
         this.length = length;
-
         this.path = path;
         this.status = status == null ? NormalConstants.STATUS_NOT_DELETE : status;
         this.version = version == null ? NormalConstants.VERSION_INIT1 : version;
@@ -242,8 +181,6 @@ public class SysFile implements Serializable {
         }
         String originalName = file.getName();
         String displayName = FileUtil.getFilenameWithoutExtension(originalName);
-        String suffix = FileUtil.getExtension(originalName).toLowerCase(); // 小写统一
-        String mimeType = getMimeType(suffix);  // video/mp4 / image/jpeg ...
         String storageType = "LOCAL";                    // 默认本地存储
 
 
@@ -255,28 +192,11 @@ public class SysFile implements Serializable {
         Integer referenceCount = 0;
 
         if (createTime == null) {
-            return new SysFile(code, hash, originalName, displayName, suffix, mediaType, mimeType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
+            return new SysFile(code, hash, originalName, displayName, mediaType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
         } else {
-            return new SysFile(new Date(createTime), new Date(modifiedTime), code, hash, originalName, displayName, suffix, mediaType, mimeType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
+            return new SysFile(new Date(createTime), new Date(modifiedTime), code, hash, originalName, displayName, mediaType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
         }
-
     }
-
-
-    /**
-     * 根据文件扩展名返回 MIME 类型
-     *
-     * @param extension 文件扩展名（不带点），小写优先
-     * @return 标准 MIME 类型
-     */
-    public static String getMimeType(String extension) {
-        if (extension == null || extension.isEmpty()) {
-            return EXTENSION_TO_MIME.get("default");
-        }
-        extension = extension.toLowerCase();
-        return EXTENSION_TO_MIME.getOrDefault(extension, EXTENSION_TO_MIME.get("default"));
-    }
-
 
     public Long getId() {
         return id;
@@ -334,28 +254,12 @@ public class SysFile implements Serializable {
         this.displayName = displayName;
     }
 
-    public String getSuffix() {
-        return suffix;
-    }
-
-    public void setSuffix(String suffix) {
-        this.suffix = suffix;
-    }
-
     public String getMediaType() {
         return mediaType;
     }
 
     public void setMediaType(String mediaType) {
         this.mediaType = mediaType;
-    }
-
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    public void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
     }
 
     public String getStorageType() {
@@ -422,14 +326,6 @@ public class SysFile implements Serializable {
         this.taskStatus = taskStatus;
     }
 
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
     public String getMaturityLevel() {
         return maturityLevel;
     }
@@ -452,6 +348,22 @@ public class SysFile implements Serializable {
 
     public void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
+    }
+
+    public Integer getTagCount() {
+        return tagCount;
+    }
+
+    public void setTagCount(Integer tagCount) {
+        this.tagCount = tagCount;
+    }
+
+    public Integer getOnMount() {
+        return onMount;
+    }
+
+    public void setOnMount(Integer onMount) {
+        this.onMount = onMount;
     }
 }
 

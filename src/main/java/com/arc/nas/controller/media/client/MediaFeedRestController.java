@@ -1,4 +1,4 @@
-package com.arc.nas.controller.data.app.media;
+package com.arc.nas.controller.media.client;
 
 import com.arc.nas.model.dto.app.media.MediaFeedDTO;
 import com.arc.nas.model.request.app.media.FeedQuery;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 模拟抖音视频流 相关的支撑接口
+ * 模拟抖音视频流 首页
  */
 @RestController
 @RequestMapping("/feed")
@@ -39,7 +39,7 @@ public class MediaFeedRestController {
      * @param keyword     搜索时候的关键词
      * @return MediaPageDTO
      */
-    @GetMapping("")
+    @GetMapping({"", "/home"})
     public ResponseEntity<MediaFeedDTO> feed(
             @RequestParam(defaultValue = "1") Integer cursor,
             @RequestParam(defaultValue = "20000") Integer step,

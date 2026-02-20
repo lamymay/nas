@@ -13,8 +13,6 @@ import java.sql.SQLException;
 
 /**
  * Mybatis结果集类型转换为java类型,用于性别转换
- *
- * @since 2020/9/8 9:43 上午
  */
 @MappedTypes(GenderEnum.class)
 @MappedJdbcTypes(JdbcType.INTEGER)

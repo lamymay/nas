@@ -29,24 +29,22 @@ CREATE TABLE IF NOT EXISTS sys_file (
 
     original_name VARCHAR(1024) NOT NULL, -- 文件真实名称
     display_name VARCHAR(1024),           -- 显示名称，可为空默认=original_name
-    suffix VARCHAR(64),                   -- 文件后缀
-
     media_type VARCHAR(32),               -- VIDEO / AUDIO / IMAGE / FILE / THUMBNAIL
     mime_type VARCHAR(128),               -- MIME 类型，如 video/mp4
 
     storage_type VARCHAR(16),             -- LOCAL / OSS / NAS
     path VARCHAR(2048) NOT NULL,          -- 存储路径（本地绝对路径或 OSS的路径）
     thumbnail VARCHAR(2048) ,             -- 缩略图code（是本表的其他行数据的code（缩略图的索引也存储在本表））
-
     length BIGINT NOT NULL,               -- 文件大小（byte）
     version INT NOT NULL,                 -- 文件版本
     status INT NOT NULL DEFAULT 1,        -- 逻辑删除，1=正常，0=删除
     reference_count INT NOT NULL DEFAULT 0,  -- 引用计数
-    remark VARCHAR(500),                  -- 描述
+    on_mount INT NOT NULL DEFAULT 1,  -- 0:离线 1:在线（默认） (磁盘挂载状态)
     task_status VARCHAR(32)   ,           -- 文件处理进度
+    remark VARCHAR(500),                  -- 描述
     maturity_level VARCHAR(32) ,          -- 多媒体内容的分级
     duration BIGINT,                      -- 多媒体内容的时长
-    author VARCHAR(64)
+    tag_count INT NOT NULL DEFAULT 0
 
 );
 
@@ -69,7 +67,7 @@ CREATE TABLE IF NOT EXISTS media_resource_config (
 
 
 CREATE TABLE IF NOT EXISTS media_tag(
-    code VARCHAR(64) PRIMARY KEY, -- 编号 UUID
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 创建时间
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 更新时间
     display_name VARCHAR(255),  -- 显示名称（可为空，默认=originalName）
@@ -79,9 +77,8 @@ CREATE TABLE IF NOT EXISTS media_tag(
 
 CREATE TABLE IF NOT EXISTS media_file_tag_relation (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    file_code VARCHAR(255) NOT NULL,
-    tag_code VARCHAR(255) NOT NULL
-
+    file_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL
 );
 
 ---  观看流水表 (核心：去重逻辑来源)

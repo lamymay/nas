@@ -1764,8 +1764,6 @@ public class FileUtil {
         /**
          * 英文点号
          * The extension separator character.
-         *
-         * @since 1.4
          */
         public static final char EXTENSION_SEPARATOR = '.';
         /**

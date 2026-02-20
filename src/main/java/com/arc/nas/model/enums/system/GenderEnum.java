@@ -2,9 +2,6 @@ package com.arc.nas.model.enums.system;
 
 import com.arc.nas.model.enums.EnumNumberInterface;
 
-/**
- * @since 2020/4/17 0:10
- */
 public enum GenderEnum implements EnumNumberInterface {
 
     UNKNOWN(0, "保密"),

@@ -11,9 +11,6 @@ import java.util.Set;
 
 /**
  * 文件操作DAO
- *
- * @author may
- * @since 2021.12.09 11:40 下午
  */
 public interface SysFileDAO {
 

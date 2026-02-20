@@ -1,4 +1,4 @@
-package com.arc.nas.controller.data.app.media;
+package com.arc.nas.controller.media.client;
 
 import com.arc.nas.model.domain.app.media.MediaClientViewLog;
 import com.arc.nas.repository.mysql.dao.system.MediaClientViewLogDAO;
@@ -15,23 +15,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 模拟抖音视频流 相关的支撑接口
- * 播放进度上报
+ * 模拟抖音视频流 播放进度上报接口
  */
 @RestController
-@RequestMapping("/api")
-public class ReportRestController {
+@RequestMapping("/feed")
+public class MediaFeedReportRestController {
 
-    private static final Logger log = LoggerFactory.getLogger(ReportRestController.class);
+    private static final Logger log = LoggerFactory.getLogger(MediaFeedReportRestController.class);
 
     private final MediaFeedService mediaFeedService;
     private final SysFileService sysFileService;
     private final UrlHelper urlHelper;
     private final MediaClientViewLogDAO mediaClientViewLogDAO;
 
-    public ReportRestController(MediaFeedService mediaFeedService, SysFileService sysFileService,
-                                UrlHelper urlHelper,
-                                MediaClientViewLogDAO mediaClientViewLogDAO
+    public MediaFeedReportRestController(MediaFeedService mediaFeedService, SysFileService sysFileService,
+                                         UrlHelper urlHelper,
+                                         MediaClientViewLogDAO mediaClientViewLogDAO
     ) {
         this.mediaFeedService = mediaFeedService;
         this.sysFileService = sysFileService;

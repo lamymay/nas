@@ -1,4 +1,4 @@
-package com.arc.nas.controller.data.app.media;
+package com.arc.nas.controller.media.cms;
 
 import com.arc.nas.model.domain.app.media.MediaTag;
 import com.arc.nas.model.domain.app.media.MediaTagRequest;
@@ -13,11 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CMS 内容管理
- * 内容打标相关
+ * 媒体管理（CMS）：内容打标相关
  */
 @RestController
-@RequestMapping("/api/media/tag")
+@RequestMapping("/media/cms/tag")
 public class MediaTagRestController {
 
     private static final Logger log = LoggerFactory.getLogger(MediaTagRestController.class);
@@ -53,5 +52,6 @@ public class MediaTagRestController {
     public ResponseEntity<List<MediaTag>> list(@RequestBody MediaTagRequest request) {
         return ResponseEntity.ok(mediaTagDAO.list(request));
     }
+
 
 }

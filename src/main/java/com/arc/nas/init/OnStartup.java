@@ -1,6 +1,6 @@
 package com.arc.nas.init;
 
-import com.arc.nas.service.app.media.MediaService;
+import com.arc.nas.service.app.media.MediaResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
@@ -15,17 +15,17 @@ import org.springframework.stereotype.Component;
 public class OnStartup implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger log = LoggerFactory.getLogger(OnStartup.class);
 
-    private final MediaService mediaService;
+    private final MediaResource mediaResource;
 
-    public OnStartup(MediaService mediaService) {
-        this.mediaService = mediaService;
+    public OnStartup(MediaResource mediaResource) {
+        this.mediaResource = mediaResource;
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         System.out.println("容器刷新事件 OnStartup will do mediaService.cleanThumbnails");
         try {
-            mediaService.cleanThumbnails(true);
+            mediaResource.cleanThumbnails(true);
         } catch (Exception exception) {
             log.error("ERROR onApplicationEvent", exception);
         }
