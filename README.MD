@@ -18,7 +18,7 @@ B/S架构设计的软件。
 ### 多媒体内容管理页面（CMS）
 https://172.20.10.5:9000/nas/media/cms
 
-![how to config media folder](data/images/how to config media folder.png)
+![how to config media folder](./data/images/how_to_config_media_folder.png)
 
 ### 图片浏览页
 
