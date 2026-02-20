@@ -1,6 +1,5 @@
 package com.arc.nas.service.app.media.impl;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,14 +15,14 @@ public class UrlHelper {
     /**
      * SSL证书相关
      */
-    @Value("${server.ssl.key-store:''}")
+    @Value("${server.ssl.key-store:}")
     public String serverSslKeyStore;
     @Value("${server.servlet.context-path:/}")
     private String contextPath;
     private String prefix;
 
     public String getProtocol() {
-        if (StringUtils.isBlank(serverSslKeyStore)) {
+        if (serverSslKeyStore == null || "".equals(serverSslKeyStore.trim())) {
             return HTTP_PROTOCOL;
         }
         return HTTPS_PROTOCOL;

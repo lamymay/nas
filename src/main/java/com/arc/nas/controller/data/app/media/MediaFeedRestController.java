@@ -4,7 +4,6 @@ import com.arc.nas.model.dto.app.media.MediaFeedDTO;
 import com.arc.nas.model.request.app.media.FeedQuery;
 import com.arc.nas.service.app.media.impl.MediaFeedService;
 import com.arc.nas.service.app.media.impl.UrlHelper;
-import com.arc.nas.service.system.common.SysFileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 模拟抖音视频流 相关的支撑接口
+ */
 @RestController
 @RequestMapping("/feed")
 public class MediaFeedRestController {
@@ -20,13 +22,11 @@ public class MediaFeedRestController {
     private static final Logger log = LoggerFactory.getLogger(MediaFeedRestController.class);
 
     private final MediaFeedService mediaFeedService;
-    private final SysFileService sysFileService;
 
     private final UrlHelper urlHelper;
 
-    public MediaFeedRestController(MediaFeedService mediaFeedService, SysFileService sysFileService, UrlHelper urlHelper) {
+    public MediaFeedRestController(MediaFeedService mediaFeedService, UrlHelper urlHelper) {
         this.mediaFeedService = mediaFeedService;
-        this.sysFileService = sysFileService;
         this.urlHelper = urlHelper;
     }
 
@@ -57,6 +57,4 @@ public class MediaFeedRestController {
         query.setKeyword(keyword);
         return ResponseEntity.ok(mediaFeedService.feed(query));
     }
-
-
 }

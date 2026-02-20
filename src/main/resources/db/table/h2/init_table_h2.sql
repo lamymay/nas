@@ -4,6 +4,7 @@
 --drop table  IF  EXISTS media_file_tag_relation;
 --drop table  IF  EXISTS media_resource_config;
 --drop table  IF  EXISTS media_client_view_log;
+--drop table  IF  EXISTS sys_mq_task;
 
 
 CREATE TABLE IF NOT EXISTS sys_key_value (
@@ -103,6 +104,5 @@ CREATE TABLE IF NOT EXISTS sys_mq_task (
     version INT DEFAULT 0,                -- 乐观锁版本号
     execute_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_mq_status (topic, status, execute_time)
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

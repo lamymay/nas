@@ -1,7 +1,6 @@
 package com.arc.nas.init;
 
 import com.arc.nas.model.dto.ArcRuntimeEnvironment;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 
+import static com.arc.nas.init.GetLocalIPAddress.getLocalIPAddress;
+
 
 /**
  * 初始化操作
@@ -21,7 +22,6 @@ import java.lang.reflect.Field;
 public class SystemInitializationStartup implements ApplicationListener<ContextRefreshedEvent> {
     final static String HTTP_PROTOCOL = "http://";
     final static String HTTPS_PROTOCOL = "https://";
-    final static String serverIp = "127.0.0.1";
     private static final Logger log = LoggerFactory.getLogger(SystemInitializationStartup.class);
     /**
      * web.system.initial:是否在系统启动的时候初始化一些操作
@@ -29,7 +29,7 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
      */
     @Value("${arc.system.initial:true}")
     public boolean initial;
-    @Value("${spring.profiles.active:''}")
+    @Value("${spring.profiles.active:}")
     public String activeProfile;
     /**
      *
@@ -44,49 +44,27 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
     /**
      * SSL证书相关
      */
-    @Value("${server.ssl.key-store:''}")
+    @Value("${server.ssl.key-store:}")
     public String serverSslKeyStore;
 
     @Autowired
     private Environment env;
 
-    public static void main(String[] args) {
-        //print();
-        System.out.println(new SystemInitializationStartup().getUrlStartWith(null));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith(""));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith(" "));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("abc"));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("/abc/"));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("/abc"));
-        System.out.println(new SystemInitializationStartup().getUrlStartWith("abc/"));
-
-    }
-
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        System.out.println("容器刷新事件 SystemInitializationStartup");
         //Spring容器加载完毕之后执行: 以下方法
-        log.info("系统启动后触发初始化={}", initial);
+        log.info("SystemInitializationStartup.onApplicationEvent 容器刷新事件(系统启动后触发初始化)={}", initial);
         if (initial) {
-            new Runnable() {
-                @Override
-                public void run() {
-                    printFileServerPath();
-                }
-            }.run();
+            new Thread(() -> printFileServerPath()).start();
         }
-//        String[] activeProfiles = env.getActiveProfiles();
-//        Object requiredProperty = env.getRequiredProperty("propertySources");
         // 初始化文件上传的输出文件夹
         ReadyResourceInit.init();
-
-        System.out.println(ReadyResourceInit.getWriteableDirectory());
-
+        log.info("onApplicationEvent {}", ReadyResourceInit.getWriteableDirectory());
 
     }
 
     public String getProtocol() {
-        if (StringUtils.isBlank(serverSslKeyStore)) {
+        if (serverSslKeyStore == null || "".equals(serverSslKeyStore.trim())) {
             return HTTP_PROTOCOL;
         }
         return HTTPS_PROTOCOL;
@@ -119,7 +97,6 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
 
         Field[] fields = clz.getDeclaredFields();
         //获取字段的名称
-
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
             field.setAccessible(true);
@@ -128,17 +105,20 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
                 String message = " 类型:" + field.getGenericType() + " 属性是:" + field.getName() + "=" + field.get(environment);
                 System.out.println(message);
             } catch (IllegalArgumentException | IllegalAccessException e) {
-                e.printStackTrace();
+                log.error("Error reflect ", e);
             }
         }
 
 
         log.info("spring.profiles.active ={}", activeProfile);
         log.info("spring.application.name ={}", env.getProperty("spring.application.name"));
-        System.out.println(getProtocol() + serverIp + ":" + port + getServletContextPath() + "/info");
-        System.out.println(getProtocol() + serverIp + ":" + port + getServletContextPath() + "/doc/test/file");
-        System.out.println(getProtocol() + serverIp + ":" + port + getServletContextPath() + "/v1/file/id");
+        System.out.println(getProtocol() + getLocalIPAddress() + ":" + port + getServletContextPath() + "/info");
+        System.out.println(getProtocol() + getLocalIPAddress() + ":" + port + getServletContextPath() + "/media/cms");
+        System.out.println(getProtocol() + getLocalIPAddress() + ":" + port + getServletContextPath() + "/media/video");
+        System.out.println(getProtocol() + getLocalIPAddress() + ":" + port + getServletContextPath() + "/media/image");
+        System.out.println(getProtocol() + getLocalIPAddress() + ":" + port + getServletContextPath() + "/media/feed");
         System.out.println("##################################################");
+
     }
 
     private String getServletContextPath() {
@@ -166,9 +146,4 @@ public class SystemInitializationStartup implements ApplicationListener<ContextR
         return servletContextPath;
 
     }
-
-
 }
-//系统会存在两个容器，一个是root application context ,另一个就是我们自己的 projectName-servlet context（作为root application context的子容器）
-// 这种情况下，就会造成onApplicationEvent方法被执行两次。为了避免上面提到的问题，我们可以只在root application context初始化完成后调用逻辑代码，其他的容器的初始化完成，则不做任何处理。
-// event.getApplicationContext().getParent() == null

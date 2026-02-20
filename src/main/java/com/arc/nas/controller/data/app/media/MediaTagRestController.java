@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * CMS 内容管理
+ * 内容打标相关
+ */
 @RestController
 @RequestMapping("/api/media/tag")
 public class MediaTagRestController {

@@ -66,13 +66,12 @@ public class ReadyResourceInit {
      * 初始化文件上传的输出文件夹
      */
     public static void init() {
-        ((Runnable) () -> {
-            System.out.println("\033[35;4m" + writeableDirectory + "\n\033[0m");
-            System.out.println("\033[35;4m" + "程序运行在的系统是:" + osName + "\n\033[0m");
-            System.out.println("\033[35;4m" + "localNetAddress:" + localNetAddress + "\n\033[0m");
-//            initUploadOutDirectory();
-//        log.info("项目运行在的系统是unix={},os={},配置的项目文件输出目录,配置的项目文件输出目录耗时{},uploadPathDefault={},uploadPath={}", isUnix, System.getProperty("os.name"), StringUtil.getTimeStringSoFar(t1), uploadPath, uploadPathDefault);
-        }).run();
+        new Thread(() -> {
+            String template = "\033[35;4m %s: %s \n\033[0m";
+            System.out.printf(template, "writeableDirectory", writeableDirectory);
+            System.out.printf(template, "程序运行在的系统是", osName);
+            System.out.printf(template, "localNetAddress", localNetAddress);
+        }).start();
     }
 
     public static File getWriteableDirectory() {

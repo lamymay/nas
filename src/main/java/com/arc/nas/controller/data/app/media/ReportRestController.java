@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 模拟抖音视频流 相关的支撑接口
+ * 播放进度上报
+ */
 @RestController
 @RequestMapping("/api")
 public class ReportRestController {
@@ -37,13 +41,18 @@ public class ReportRestController {
 
     @PostMapping("/report")
     public ResponseEntity<MediaClientViewLog> report(@RequestBody MediaClientViewLog viewLog) {
-        // 异步处理逻辑，比如放入 Redis 给推送系统计算权重
-
+        // todo 后续异步处理逻辑，比如 给推送系统计算权重
         if (viewLog.getClientCode() == null) {
             return ResponseEntity.badRequest().build();
         }
-        log.info("report viewLog={} ", JSON.toJSONString(viewLog));
-        return ResponseEntity.ok(mediaClientViewLogDAO.saveOrUpdateOne(viewLog));
+        try {
+            log.info("report viewLog={} ", JSON.toJSONString(viewLog));
+            return ResponseEntity.ok(mediaClientViewLogDAO.saveOrUpdateOne(viewLog));
+        } catch (Exception exception) {
+            log.error("report", exception);
+            return ResponseEntity.badRequest().build();
+
+        }
     }
 
 }
