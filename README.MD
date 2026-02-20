@@ -28,6 +28,10 @@ https://172.20.10.5:9000/nas/media/image
 
 https://172.20.10.5:9000/nas/media/video
 
+### 视频竖屏播放复刻抖音
+
+https://172.20.10.5:9000/nas/feed
+
 
 ## 4. todo
 

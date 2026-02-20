@@ -27,7 +27,7 @@ public class MediaPageController {
 
     /// 模仿抖音
     @GetMapping("/media/feed")
-    public String media_video_v2() {
-        return "media/media_video_v2";
+    public String media_feed() {
+        return "media/media_feed";
     }
 }

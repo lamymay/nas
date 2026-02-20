@@ -3,34 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-    <title>NAS Media Feed</title>
+    <title>NAS Media Feed - Universal</title>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; color: #fff; font-family: -apple-system, sans-serif; }
         #feedContainer { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; -ms-overflow-style: none; }
         #feedContainer::-webkit-scrollbar { display: none; }
+
         .media-section { height: 100vh; width: 100vw; scroll-snap-align: start; scroll-snap-stop: always; position: relative; display: flex; align-items: center; justify-content: center; }
         .media-content { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* 自定义控制层 */
+        /* 中间状态图标 */
+        .state-icon {
+            position: absolute; font-size: 60px; color: rgba(255,255,255,0.5);
+            opacity: 0; transform: translate(-50%, -50%) scale(1.5); transition: 0.2s;
+            z-index: 5; left: 50%; top: 50%; pointer-events: none;
+        }
+        .paused .state-icon { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* UI层：现在它是交互的核心 */
         .video-ui-layer {
             position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
-            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 20%);
-            opacity: 0; transition: opacity 0.3s; z-index: 10; pointer-events: none;
+            background: transparent; z-index: 10; cursor: pointer;
         }
-        .video-ui-layer.visible { opacity: 1; pointer-events: auto; }
+        /* 只有在显示时才展示渐变底色，增加按钮可读性 */
+        .video-ui-layer.visible {
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 25%);
+        }
 
-        /* 进度条样式 */
-        .controls-wrapper { padding: 20px 15px 40px; }
-        .progress-container { width: 100%; height: 14px; display: flex; align-items: center; cursor: pointer; margin-bottom: 10px; }
-        .progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; position: relative; flex: 1; }
-        .progress-fill { height: 100%; background: #fe2c55; width: 0%; border-radius: 2px; }
+        .controls-wrapper { padding: 20px 15px 40px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .video-ui-layer.visible .controls-wrapper { opacity: 1; pointer-events: auto; }
 
-        .bottom-bar { display: flex; justify-content: space-between; align-items: center; }
-        .time-text { font-size: 12px; color: #eee; }
+        .progress-container { width: 100%; height: 20px; display: flex; align-items: center; cursor: pointer; }
+        .progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+        .progress-fill { height: 100%; background: #fe2c55; width: 0%; border-radius: 2px; position: relative; }
+        .progress-fill::after { content: ''; position: absolute; right: -5px; top: -3px; width: 10px; height: 10px; background: #fff; border-radius: 50%; }
+
+        .bottom-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .time-text { font-size: 12px; color: #eee; font-family: monospace; }
         .speed-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
 
-        .info-overlay { position: absolute; bottom: 100px; left: 15px; pointer-events: none; z-index: 5; }
-        .display-name { font-size: 16px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.8); margin-bottom: 4px; }
+        .info-overlay { position: absolute; bottom: 110px; left: 15px; pointer-events: none; z-index: 8; }
+        .display-name { font-size: 16px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
@@ -40,10 +53,12 @@
 <script>
     let cursor = 1;
     const step = 20;
+    let isLoading = false;
     const container = document.getElementById('feedContainer');
-    const REPORT_URL = '/nas/feed/report';
 
     async function loadMore() {
+        if (isLoading) return;
+        isLoading = true;
         try {
             const res = await fetch(`/nas/feed?cursor=${cursor}&step=${step}&contentType=VIDEO&deviceId=1`);
             const data = await res.json();
@@ -52,6 +67,7 @@
                 cursor = data.cursor || (cursor + 1);
             }
         } catch (e) { console.error("加载失败", e); }
+        finally { isLoading = false; }
     }
 
     function renderMedia(items) {
@@ -61,23 +77,23 @@
             const mediaUrl = item.segmentMap?.original?.[0]?.url;
 
             if (item.mediaType === 'VIDEO') {
-                // 去掉了 video 的 loop 属性，改为通过 JS 控制 ended 事件实现自动下一集或手动循环
                 section.innerHTML = `
-                    <video class="media-content" data-file-code="${item.code}" data-src="${mediaUrl}" playsinline preload="metadata"></video>
+                    <div class="state-icon">▶</div>
+                    <video class="media-content" data-file-code="${item.code}" data-src="${mediaUrl}" playsinline preload="metadata" loop></video>
                     <div class="video-ui-layer">
                         <div class="controls-wrapper">
                             <div class="progress-container">
                                 <div class="progress-bg"><div class="progress-fill"></div></div>
                             </div>
                             <div class="bottom-bar">
-                                <span class="time-text">00:00</span>
+                                <span class="time-text">00:00 / 00:00</span>
                                 <button class="speed-btn">1.0X</button>
                             </div>
                         </div>
                     </div>
                     <div class="info-overlay"><div class="display-name">${item.displayName}</div></div>
                 `;
-                setupVideoEvents(section, item.code);
+                setupUniversalEvents(section, item.code);
             } else {
                 section.innerHTML = `<img class="media-content" src="${mediaUrl}">`;
             }
@@ -86,28 +102,46 @@
         initObserver();
     }
 
-    function setupVideoEvents(section, fileCode) {
+    function setupUniversalEvents(section, fileCode) {
         const video = section.querySelector('video');
-        const ui = section.querySelector('.video-ui-layer');
+        const uiLayer = section.querySelector('.video-ui-layer');
         const progressFill = section.querySelector('.progress-fill');
         const progressContainer = section.querySelector('.progress-container');
         const speedBtn = section.querySelector('.speed-btn');
         const timeText = section.querySelector('.time-text');
 
         let uiTimer;
-        let lastReportTime = 0;
-        let initialReportDone = false;
 
-        // 1. 点击画面显示/隐藏 UI
-        video.addEventListener('click', () => {
-            ui.classList.toggle('visible');
-            if (ui.classList.contains('visible')) {
-                clearTimeout(uiTimer);
-                uiTimer = setTimeout(() => ui.classList.remove('visible'), 3000);
+        // 核心修复：点击 UI 层控制全局
+        uiLayer.addEventListener('click', (e) => {
+            // 如果点击的是 UI 层本身（而不是按钮或进度条）
+            if (e.target === uiLayer) {
+                if (video.paused) {
+                    video.play().catch(()=>{});
+                    section.classList.remove('paused');
+                    uiLayer.classList.remove('visible'); // 播放时隐藏UI
+                } else {
+                    video.pause();
+                    section.classList.add('paused');
+                    uiLayer.classList.add('visible'); // 暂停时显示UI
+                    report(fileCode, video.currentTime);
+                }
+            } else {
+                // 如果点击了按钮或进度条，重置自动隐藏计时器
+                resetUITimer();
             }
         });
 
-        // 2. 进度条点击跳转
+        function resetUITimer() {
+            clearTimeout(uiTimer);
+            if (!video.paused) {
+                uiTimer = setTimeout(() => {
+                    uiLayer.classList.remove('visible');
+                }, 3000);
+            }
+        }
+
+        // 进度条点击 (stopPropagation 确保不触发 uiLayer 的暂停逻辑)
         progressContainer.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!video.duration) return;
@@ -116,7 +150,7 @@
             video.currentTime = pos * video.duration;
         });
 
-        // 3. 倍速切换
+        // 倍速点击 (stopPropagation)
         const speeds = [1.0, 1.25, 1.5, 2.0];
         let sIdx = 0;
         speedBtn.addEventListener('click', (e) => {
@@ -126,56 +160,22 @@
             speedBtn.innerText = speeds[sIdx] + 'X';
         });
 
-        // 4. 初次播放延迟 10ms 上报
-        video.addEventListener('play', () => {
-            if (!initialReportDone) {
-                setTimeout(() => {
-                    if (!video.paused) {
-                        report(fileCode, video.currentTime);
-                        initialReportDone = true;
-                        lastReportTime = Date.now();
-                    }
-                }, 10);
-            }
-        });
-
-        // 5. 更新进度与 30s 周期上报
         video.addEventListener('timeupdate', () => {
             if (!video.duration) return;
             const p = (video.currentTime / video.duration) * 100;
             progressFill.style.width = p + '%';
-            timeText.innerText = formatTime(video.currentTime);
-
-            const now = Date.now();
-            if (now - lastReportTime > 30000) { // 30秒间隔
-                report(fileCode, video.currentTime);
-                lastReportTime = now;
-            }
-        });
-
-        // 6. 自然播放完毕：上报并切到下一个视频
-        video.addEventListener('ended', () => {
-            report(fileCode, video.duration);
-            const nextSection = section.nextElementSibling;
-            if (nextSection && nextSection.classList.contains('media-section')) {
-                nextSection.scrollIntoView({ behavior: 'smooth' });
-            }
+            timeText.innerText = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
         });
     }
 
+    // 上报逻辑、Observer、TimeFormat 保持不变...
     async function report(fileCode, playAt) {
         if (!fileCode) return;
-        const payload = {
-            fileCode: fileCode,
-            playAt: Math.floor(playAt * 1000), // 毫秒级上报
-            clientCode: "device_001"
-        };
-        console.log("上报进度:", payload);
-        fetch(REPORT_URL, {
+        fetch('/nas/feed/report', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        }).catch(err => console.warn("上报失败:", err));
+            body: JSON.stringify({ fileCode, playAt: Math.floor(playAt * 1000), clientCode: "device_001" })
+        }).catch(()=>{});
     }
 
     function formatTime(s) {
@@ -188,33 +188,26 @@
         const obs = new IntersectionObserver((es) => {
             es.forEach(e => {
                 const v = e.target;
-                const fCode = v.getAttribute('data-file-code');
                 if (e.isIntersecting) {
                     if (!v.src) v.src = v.getAttribute('data-src');
-                    v.play().catch(err => console.log("播放被拦截"));
+                    v.play().catch(() => {});
+                    v.parentElement.classList.remove('paused');
                 } else {
                     if (v.tagName === 'VIDEO') {
                         v.pause();
-                        if (fCode && v.currentTime > 0) {
-                            report(fCode, v.currentTime); // 划走时上报
-                        }
+                        if (v.currentTime > 0) report(v.getAttribute('data-file-code'), v.currentTime);
                         v.removeAttribute('src');
                         v.load();
                     }
                 }
             });
-        }, { threshold: 0.6 });
+        }, { threshold: 0.5 });
         document.querySelectorAll('video').forEach(v => obs.observe(v));
     }
 
-    // 初始加载
     loadMore();
-
-    // 滚动加载逻辑
     container.addEventListener('scroll', () => {
-        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 200) {
-            loadMore();
-        }
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 300) loadMore();
     });
 </script>
 </body>
