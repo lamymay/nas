@@ -7,7 +7,6 @@ import com.arc.nas.model.request.app.media.*;
 import com.arc.nas.service.app.media.MediaResource;
 import com.arc.nas.service.app.media.impl.UrlHelper;
 import com.arc.nas.service.system.common.SysFileService;
-import com.arc.nas.service.system.common.impl.MQMocker;
 import com.arc.util.JSON;
 import com.arc.util.StringTool;
 import org.slf4j.Logger;
@@ -36,17 +35,14 @@ public class MediaCMSRestController {
     private final UrlHelper urlHelper;
     private final MediaResource mediaResource;
     private final SysFileService sysFileService;
-    private final MQMocker mqMocker;
 
     public MediaCMSRestController(
             UrlHelper urlHelper,
             MediaResource mediaResource,
-            SysFileService sysFileService,
-            MQMocker mqMocker) {
+            SysFileService sysFileService) {
         this.urlHelper = urlHelper;
         this.mediaResource = mediaResource;
         this.sysFileService = sysFileService;
-        this.mqMocker = mqMocker;
 
     }
 
@@ -162,3 +158,4 @@ public class MediaCMSRestController {
     }
 
 }
+

@@ -15,6 +15,13 @@ B/S架构设计的软件。
 * 「原因是：自签名证书在浏览器页面中会被浏览器默认逻辑引导至信任同意。否则js中（用的是server的实际 IP 地址）的https请求可能无法正确加载」
 
 
+### 内嵌h2数据库的管理页面
+https://172.20.10.5:9000/nas/h2
+需要填入的三个参数：
+jdbc:h2:file:./data/db/h2/h2_db
+username: root
+password: root#1234
+
 ### 多媒体内容管理页面（CMS）
 https://172.20.10.5:9000/nas/media/cms
 
