@@ -15,7 +15,9 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.arc.util.StringTool.getTimeStringSoFar;
 import static com.arc.util.file.FileUtil.FileUtilConst.*;
 
 
@@ -24,19 +26,8 @@ import static com.arc.util.file.FileUtil.FileUtilConst.*;
  */
 public class FileUtil {
 
-    //***************************************************
-    //                   工具方法1- 静态属性定义
-    //***************************************************
-    static final double kByte = 1024;
-    static final double mByte = 1024 * kByte;
-    static final double gByte = 1024 * mByte;
-    static final double tByte = 1024 * gByte;
-    static final double eByte = 1024 * tByte;
-    static final double pByte = 1024 * eByte;
     private static final Logger log = LoggerFactory.getLogger(FileUtil.class);
     static Desktop desktop;
-    static boolean enableDebug = true;
-    static String osName = System.getProperty("os.name");
 
     static {
         try {
@@ -47,6 +38,56 @@ public class FileUtil {
             log.warn("Desktop not available, running in headless mode", e);
         }
     }
+
+    //***************************************************
+
+    // --- 以下是保持兼容的旧方法，全部转发到新底层 ---
+    public static List<File> listFileByFolder(String folder) {
+        return listFileByFolder(new File(folder));
+    }
+
+    public static List<File> listFileByFolder(File directory) {
+        return listFileByFolder(directory, null, null);
+    }
+
+
+    public static List<File> listFileByFolder(File folder, String extension, Set<String> blackList) {
+        final long scanAllFilesBefore = System.currentTimeMillis();
+        if (folder == null) {
+            return null;
+        } else {
+            List<File> collect = walk(folder.toPath(), extension, blackList)
+                    .stream().map(Path::toFile).collect(Collectors.toList());
+            log.info("扫描指定目录下的所有文件folder={}，文件总数量:{},耗时={} %n", folder,
+                    collect == null ? null : collect.size(),
+                    getTimeStringSoFar(scanAllFilesBefore));
+            return collect;
+        }
+    }
+
+    /**
+     * 极简替代版：支持递归、扩展名过滤、黑名单过滤
+     *
+     * @param folder
+     * @param extension
+     * @param blackList
+     * @return
+     */
+    public static List<Path> walk(Path folder, String extension, Set<String> blackList) {
+        log.info("扫描指定目录下的所有文件folder={},extension={},blackList={}", folder, extension, JSON.toJSONString(blackList));
+        if (folder == null) return Collections.emptyList();
+        try (Stream<Path> stream = Files.walk(folder)) {
+            return stream
+                    .parallel() // 开启并行流，压榨多核性能
+                    .filter(Files::isRegularFile) // 只取文件，排除文件夹
+                    .filter(path -> extension == null || path.toString().endsWith(extension)) // 后缀过滤
+                    .filter(path -> blackList == null || !blackList.contains(path.getFileName().toString())) // 黑名单过滤
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            return Collections.emptyList();
+        }
+    }
+
 
     public static File createFileIfNotExist(File canWriteFile) {
         if (canWriteFile == null) {
@@ -105,50 +146,6 @@ public class FileUtil {
             e.printStackTrace();
         }
         return outputStream;
-    }
-
-    /**
-     * 反斜杠转换为斜杠
-     *
-     * @param path path
-     * @return String
-     */
-    public static String convertToUnixSeparator(String path) {
-
-        if (isBlank(path)) {
-            return path;
-        }
-
-        /*
-        WIN不允许文件名称出现 \ / : * ? " < > |
-        说明符号 * 是路径分割符(Windows的路径分隔符是反斜杠，但处理文件的API接受带正斜杠的路径名)。
-        符号 < > 是输入输出重定向，比如想把foo.exe的输出重定向到文件abc.txt:：foo > abc.txt；把anc.txt的内容输入给foo.exe：foo < abc.txt。
-        符号 : 是用来区分盘符,比如C: D:。
-        符号 "" 是用来标记带空格的路径，比如"C:\Program Files"。
-        符号 | 是管道，把一个程序的输出作为另一个程序的输入，比如type命令查看文件内容，但如果文件很大一屏显示不下的话就需要把输出通过管道给more命令，这样每输出满一屏就会停下来直到你按键再输出下一屏： type abc.txt | more。
-
-        PS0 NTFS文件系统不允许在根目录中存在以下文件名：$Mft，$MftMirr，$LogFile，$Volume，$AttrDef，$Bitmap，$Boot，$BadClus，$Secure，$Upcase，$Extend，$Quota，$ObjId，$Reparse。因为这些是NTFS文件系统的元文件
-        PS1：Windows不允许只包含点的文件名，比如.，..，...等等，因为Windows中.代表当前文件夹而..代表上一级文件夹。
-        PS2：NTFS文件系统不允许在根目录中存在以下文件名：$Mft，$MftMirr，$LogFile，$Volume，$AttrDef，$Bitmap，$Boot，$BadClus，$Secure，$Upcase，$Extend，$Quota，$ObjId，$Reparse。因为这些是NTFS文件系统的元文件。
-        PS3：Windows不允许下列文件名：CON，PRN，AUX, NUL，COM1，COM2，COM3，COM4，LPT1，LPT2，LPT3，LPT4。因为这些名字是DOS和Windows中的设备文件名。比如CON输入时代表键盘，输出时代表屏幕；AUX代表辅助设备（通常是COM1），PRN代表打印机，NUL代表空设备，COMX代表COM接口，LPTX代表LPT接口。
-        除了这把个字符，Windows还不允许文件名包含空字符(NULL,U+0000)。
-
-        */
-
-        /*
-        mac 上测试件名称可以包含字符串 \\ /
-        */
-
-        if (isWindow()) {
-            return path.replaceAll(WINDOWS_SEPARATOR, FileUtilConst.UNIX_SEPARATOR);
-        }
-        return path;
-
-    }
-
-    public static boolean isWindow() {
-        //return (SystemOSUtil.isWindow()); // 有工具类的 但是这里为了高内聚，放弃使用外部依赖，直接调用工具类
-        return (osName != null && osName.toUpperCase().contains("WINDOWS"));
     }
 
     /**
@@ -361,7 +358,6 @@ public class FileUtil {
     }
 
     public static boolean deleteFile(File file) {
-        log.info("删除文件file={}", file);
 
         // 如果文件路径所对应的文件存在，并且是一个文件，则直接删除
         if (!file.exists()) {
@@ -468,75 +464,49 @@ public class FileUtil {
 
     }
 
-    /**
-     * 获取指定目录下的全部文件
-     * 当前文件夹以及子文件夹不包含在返回值的list中
-     * 会包含 .DS_Store
-     *
-     * @param directory 支持传入文件 或者文件路径
-     * @return list
-     */
-    public static List<File> listFileByDir(File directory) {
-        //log.debug("指定目录下的全部文件,目录={}", directory);
-        if (directory == null) {
-            return Collections.emptyList();
-        }
 
-        List<File> files = new ArrayList<>();
-
-        // 是一个文件
-        if (directory.isFile()) {
-            //files.add(directory);            return files;
-            directory = directory.getParentFile();
-        }
-        //log.info("要处理的文件最上层父路径是={}", directory.getPath());
-
-        //是一个目录
-        if (directory.isDirectory()) {
-            File[] tempFiles = directory.listFiles();
-            if (tempFiles != null && tempFiles.length >= 1) {
-                for (File tempFile : tempFiles) {
-                    if (tempFile.isDirectory()) {
-                        files.addAll(listFileByDir(tempFile));
-                    } else {
-                        files.add(tempFile);
-                    }
-                }
-            }
-
-        }
-        return files;
-    }
-
-    public static List<File> listFileByDir(String directoryPath) {
-        if (isBlank(directoryPath)) {
-            return Collections.emptyList();
-        }
-        return listFileByDir(new File(directoryPath));
-    }
-
-    /**
-     * 忽略指定名称的条件下列出目录下的全部文件
-     *
-     * @param directoryPath 文件目录
-     * @param fileFilter    是指定名称数据字典
-     * @return List
-     */
-    public static List<File> listFileByDir(String directoryPath, Collection<String> fileFilter) {
-        if (isBlank(directoryPath)) {
-            return null;
-        }
-        List<File> files = listFileByDir(new File(directoryPath));
-        if (fileFilter == null || fileFilter.isEmpty()) return files;
-
-        return files.stream().filter(it -> it != null && !fileFilter.contains(it.getName())).collect(Collectors.toList());
-    }
-
-    private static void verifyFileNotNull(File targetFile, String message) {
+    public static void verifyFileNotNull(File targetFile, String message) {
         if (targetFile == null) {
             throw new RuntimeException(message);
         }
     }
+
+
+    // 文件夹-->文件夹
+    public static void moveSourceFileDirToTargetFileDir(File sourceFile, File targetFile) {
+
+        verifyFileNotNull(sourceFile, "文件移动错误,sourceFile文件(夹)不存在");
+        verifyFileNotNull(targetFile, "文件移动错误,targetFile文件(夹)不存在");
+
+        if (!targetFile.exists()) {
+            verifyFileDirIfNotExistCreate(targetFile);
+        }
+        try {
+            log.info("移动文件【文件夹-->文件夹】,源文件夹删除-成功");
+            final File targetDir = new File(targetFile.getAbsolutePath() + File.separator + sourceFile.getName());
+            if (!targetDir.exists()) {
+                final boolean mkdirs = targetDir.mkdirs();
+                if (mkdirs) {
+                    log.info("移动文件【文件夹-->文件夹】,目标文件夹创建成功");
+                    if (sourceFile.delete()) {
+                        log.info("移动文件【文件夹-->文件夹】,源文件夹删除-成功");
+                    } else {
+                        log.info("移动文件【文件夹-->文件夹】,源文件夹删除-失败");
+                    }
+
+                } else {
+                    log.info("移动文件【文件夹-->文件夹】,源文件夹删除-成功 & 目标文件夹创建成功");
+                }
+            }
+
+
+        } catch (Exception exception) {
+            log.error("error when 源文件夹删除", exception);
+        }
+
+    }
+
+
     /*
      * 目标路文件的几种情况
      * 1 目标路文件夹不存在
@@ -555,7 +525,6 @@ public class FileUtil {
      * 5 异常终止(磁盘丢失、断电等)
      */
 
-
     /**
      * 移动指定文件夹下的全部文件到指定目录 或者移动指定文件到指定目录
      *
@@ -565,12 +534,9 @@ public class FileUtil {
      * @param ignoreEmptyDir 是否移动空的源文件夹 true= 不移动空文件夹 false=移动空文件夹
      * @return false=移动失败 其他=成功=没有消息就是最好的消息思想
      */
-    @Deprecated
     public static String moveFile(File sourceFile, File targetFile, int ifSameAction, Boolean ignoreEmptyDir) {
         // 目标读写性判断
-        if (enableDebug) {
-            log.info("文件移动,,\nsourceFile={}\ntargetFile={}\ntargetFile.exists()={}\ntargetFile.canWrite()={}", sourceFile, targetFile, targetFile.exists(), targetFile.canWrite());
-        }
+        log.info("文件移动,,\nsourceFile={}\ntargetFile={}\ntargetFile.exists()={}\ntargetFile.canWrite()={}", sourceFile, targetFile, targetFile.exists(), targetFile.canWrite());
 
         try {
             requireFileExistsOrElseThrows(sourceFile);
@@ -620,38 +586,6 @@ public class FileUtil {
         return "OK";
     }
 
-    // 文件夹-->文件夹
-    public static void moveSourceFileDirToTargetFileDir(File sourceFile, File targetFile) {
-        verifyFileNotNull(sourceFile, "文件移动错误,sourceFile文件(夹)不存在");
-        verifyFileNotNull(targetFile, "文件移动错误,targetFile文件(夹)不存在");
-
-        if (!targetFile.exists()) {
-            verifyFileDirIfNotExistCreate(targetFile);
-        }
-        try {
-            log.info("移动文件【文件夹-->文件夹】,源文件夹删除-成功");
-            final File targetDir = new File(targetFile.getAbsolutePath() + File.separator + sourceFile.getName());
-            if (!targetDir.exists()) {
-                final boolean mkdirs = targetDir.mkdirs();
-                if (mkdirs) {
-                    log.info("移动文件【文件夹-->文件夹】,目标文件夹创建成功");
-                    if (sourceFile.delete()) {
-                        log.info("移动文件【文件夹-->文件夹】,源文件夹删除-成功");
-                    } else {
-                        log.info("移动文件【文件夹-->文件夹】,源文件夹删除-失败");
-                    }
-
-                } else {
-                    log.info("移动文件【文件夹-->文件夹】,源文件夹删除-成功 & 目标文件夹创建成功");
-                }
-            }
-
-
-        } catch (Exception exception) {
-            log.error("error when 源文件夹删除", exception);
-        }
-
-    }
 
     /**
      * 非线程安全
@@ -726,11 +660,9 @@ public class FileUtil {
     }
 
     public static void renameToFileToFileOnly(File sourceFile, File targetFile) {
-
         // 移动
         boolean renameTo = sourceFile.renameTo(targetFile);
-        if (enableDebug)
-            log.info("renameToFileToFileOnly文件移动renameTo结果={},源-->目标\n{}\n{}\n", (renameTo ? "成功" : "失败"), sourceFile, targetFile);
+        log.info("renameToFileToFileOnly文件移动renameTo结果={},源-->目标\n{}\n{}\n", (renameTo ? "成功" : "失败"), sourceFile, targetFile);
 
         // 移动失败重试  手动拷贝文件 然后删除源文件
         if (!renameTo) {
@@ -738,8 +670,7 @@ public class FileUtil {
             try {
                 writeToDiskWithTry(new FileInputStream(sourceFile), targetFile);
                 deleteFile(sourceFile, true);
-                if (enableDebug)
-                    log.info("文件移动(重试方式)-成功,{}-->\ntargetFile.getPath():\n{}\ntoDiskPath:\n{}", sourceFile.getPath(), targetFile.getPath(), targetFile);
+                log.info("文件移动(重试方式)-成功,{}-->\ntargetFile.getPath():\n{}\ntoDiskPath:\n{}", sourceFile.getPath(), targetFile.getPath(), targetFile);
 
             } catch (FileNotFoundException exception) {
                 log.error("Error 文件移动(重试方式)-失败", exception);
@@ -929,103 +860,13 @@ public class FileUtil {
 
 
     public static String formatFileLengthWithUnit(long length) {
-
-        double humanNumber = 0D;
-        String humanNumberUnit = "";
-        if (length < kByte) {
-            humanNumber = length;
-            humanNumberUnit = "B";
-        } else if (length < mByte) {
-            humanNumber = length / kByte;
-            humanNumberUnit = "KB";
-        } else if (length < gByte) {
-            humanNumber = length / mByte;
-            humanNumberUnit = "MB";
-        } else if (length < tByte) {
-            humanNumber = length / gByte;
-            humanNumberUnit = "GB";
-        } else if (length < eByte) {
-            humanNumber = length / tByte;
-            humanNumberUnit = "TB";
-        } else if (length < pByte) {
-            humanNumber = length / eByte;
-            humanNumberUnit = "TB";
-        } else {
-            humanNumberUnit = "?";
-        }
-        // %.2f %. 表示 小数点前任意位数 2 表示两位小数 格式后的结果为f 表示浮点型。
-        return String.format("%.2f%s", humanNumber, humanNumberUnit);
-
-    }
-
-    public static String[] formatFileLengthWithUnitV3(long length) {
-
-        double humanNumber = 0D;
-        String humanNumberUnit = "";
-        if (length < kByte) {
-            humanNumber = length;
-            humanNumberUnit = "B";
-        } else if (length < mByte) {
-            humanNumber = length / kByte;
-            humanNumberUnit = "KB";
-        } else if (length < gByte) {
-            humanNumber = length / mByte;
-            humanNumberUnit = "MB";
-        } else if (length < tByte) {
-            humanNumber = length / gByte;
-            humanNumberUnit = "GB";
-        } else if (length < eByte) {
-            humanNumber = length / tByte;
-            humanNumberUnit = "TB";
-        } else if (length < pByte) {
-            humanNumber = length / eByte;
-            humanNumberUnit = "TB";
-        } else {
-            humanNumberUnit = "?";
-        }
-        // %.2f %. 表示 小数点前任意位数 2 表示两位小数 格式后的结果为f 表示浮点型。
-        String format = String.format("%.2f", humanNumber);
-        return new String[]{format, humanNumberUnit};
-
+        return FileDisplayHumanTool.formatFileLengthWithUnit(length);
     }
 
 
     @Deprecated
     public static String getFileSizeWithUnitV0(long length) {
-        double kByte = 1024;
-        double mByte = 1024 * kByte;
-        double gByte = 1024 * mByte;
-        double tByte = 1024 * gByte;
-        double eByte = 1024 * tByte;
-        double pByte = 1024 * eByte;
-
-
-        double humanNumber = 0D;
-        String humanNumberUnit = "";
-        if (length < kByte) {
-            humanNumber = length;
-            humanNumberUnit = "B";
-        } else if (length < mByte) {
-            humanNumber = length / kByte;
-            humanNumberUnit = "KB";
-        } else if (length < gByte) {
-            humanNumber = length / mByte;
-            humanNumberUnit = "MB";
-        } else if (length < tByte) {
-            humanNumber = length / gByte;
-            humanNumberUnit = "GB";
-        } else if (length < eByte) {
-            humanNumber = length / tByte;
-            humanNumberUnit = "TB";
-        } else if (length < pByte) {
-            humanNumber = length / eByte;
-            humanNumberUnit = "TB";
-        } else {
-            humanNumberUnit = "?";
-        }
-        // %.2f %. 表示 小数点前任意位数 2 表示两位小数 格式后的结果为f 表示浮点型。
-        return String.format("%.2f%s", humanNumber, humanNumberUnit);
-
+        return FileDisplayHumanTool.getFileSizeWithUnitV0(length);
     }
 
 
@@ -1036,37 +877,9 @@ public class FileUtil {
      * @return Megabytes 精度8位小数
      */
     public static double formatFileLengthUseMegabytesUnit(long length) {
-        double megabytes = (double) length / (1024 * 1024);
-        // 保留8位小数
-        return Math.round(megabytes * 100000000.0) / 100000000.0;
+        return FileDisplayHumanTool.formatFileLengthUseMegabytesUnit(length);
     }
 
-    /**
-     * 判断文件是MB级别 还是GB级别  B KB MB GB TB EB
-     *
-     * @param length length
-     * @return 单位
-     */
-    public static String formatFileLengthOnlyGetUnit(long length) {
-        double kByte = 1024;
-        double mByte = 1024 * kByte;
-        double gByte = 1024 * mByte;
-        double tByte = 1024 * gByte;
-        double eByte = 1024 * tByte;
-
-        if (length < kByte) {
-            return "B";
-        } else if (length < mByte) {
-            return "KB";
-        } else if (length < gByte) {
-            return "MB";
-        } else if (length < tByte) {
-            return "GB";
-        } else if (length < eByte) {
-            return "TB";
-        }
-        return "我也不知道";
-    }
 
     public static void open(String fullFileName) {
         open(new File(fullFileName));
@@ -1295,45 +1108,17 @@ public class FileUtil {
     /// ***************** 文件大小 END *****************
 
 
+    @Deprecated
     public static TreeSet<String> readLines(File source) {
-        BufferedReader reader = null;
-        String temp = null;
-        TreeSet<String> lines = new TreeSet<>();
-        int line = 1;
-        try {
-            reader = new BufferedReader(new FileReader(source));
-            while ((temp = reader.readLine()) != null) {
-                lines.add(temp);
-                line++;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return lines;
+        return FileReadTool.readLines(source);
     }
 
-
+    @Deprecated
     public static String readLinesAsString(File source) {
         return readLinesAsString(source, false);
     }
 
-    /**
-     * @param filePath            file path
-     * @param showDebugLineNumber debug
-     * @return content  / null(if occur error)
-     */
-    public static String readLinesAsString(Path filePath, boolean showDebugLineNumber) {
-        return FileReadTool.readLinesAsString(filePath, showDebugLineNumber);
-    }
-
+    @Deprecated
     public static String readLinesAsString(File file, boolean showDebugLineNumber) {
         return FileReadTool.readLinesAsString(file.toPath(), showDebugLineNumber);
     }
@@ -1675,25 +1460,6 @@ public class FileUtil {
         return Math.max(lastUnixPos, lastWindowsPos);
     }
 
-    private static void fun1() {
-        System.out.println("24534612203910144".length());
-        System.out.println(new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date()));//20190113 180709850
-
-        System.out.println();
-        String uuid = UUID.randomUUID().toString();
-        String uuidReplace = uuid.replace("-", "");
-        System.out.println(uuid);                      //c4bf200f-85bf-431c-b91a-1c4c8247f1d7
-        System.out.println(uuidReplace);        //c4bf200f85bf431cb91a1c4c8247f1d7
-        System.out.println();
-        Object x = Math.random();
-        System.out.println("random--> " + x);
-        String file2 = "a/b/c/application.txt";
-        System.out.println(getIndexOfLastSeparator("application.txt"));
-        System.out.println(getIndexOfLastSeparator(file2));
-        System.out.println();
-        System.out.println(getExtension(file2));
-    }
-
     public static boolean deleteDirectoryV0(File dir) {
         if (dir != null && dir.isDirectory()) {
             String[] children = dir.list();
@@ -1709,15 +1475,21 @@ public class FileUtil {
         return dir.delete();
     }
 
-    public static void main(String[] args) {
-//        File inputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\adb\\SONY手机常见软件包名称.txt");
-//        File outputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\adb\\SONY手机常见软件包名称-no-duplicated.txt");
-
-        File inputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\s62\\all.txt");
-        File outputFile = new File("H:\\code\\java\\fx\\src\\main\\java\\com\\arc\\fx\\tool\\adb\\s62\\all-no-duplicated.txt");
-
-        TreeSet<String> lines = FileUtil.readLines(inputFile);
-        FileUtil.writeToDisk(lines, outputFile, true);
+    /**
+     * 删除
+     *
+     * @param files files
+     */
+    private void deleteFile(File... files) {
+        for (File file : files) {
+            if (file.exists()) {
+                try {
+                    boolean delete = file.delete();
+                } catch (Exception e) {
+                    log.error("ERROR 文件删除时候出错={}，filePath={}", e, file.getPath());
+                }
+            }
+        }
     }
 
 
@@ -1742,28 +1514,13 @@ public class FileUtil {
 //        }
 //    }
 
-    /**
-     * 删除
-     *
-     * @param files files
-     */
-    private void deleteFile(File... files) {
-        for (File file : files) {
-            if (file.exists()) {
-                try {
-                    boolean delete = file.delete();
-                } catch (Exception e) {
-                    log.error("ERROR 文件删除时候出错={}，filePath={}", e, file.getPath());
-                }
-            }
-        }
-    }
-
     public static class FileUtilConst {
 
         /**
          * 英文点号
          * The extension separator character.
+         *
+         * @since 1.4
          */
         public static final char EXTENSION_SEPARATOR = '.';
         /**
@@ -1961,4 +1718,6 @@ public class FileUtil {
             return "{" + "\"sourceFileName\":" + sourceFileName + "," + "\"prefix\":" + prefix + "," + "\"suffix\":" + suffix + "}\n";
         }
     }
+
+
 }

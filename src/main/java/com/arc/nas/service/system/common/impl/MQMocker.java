@@ -24,28 +24,34 @@ import java.util.function.Consumer;
 public class MQMocker {
 
     private static final Logger log = LoggerFactory.getLogger(MQMocker.class);
-
-    // 状态定义
-    private volatile State currentState = State.RUNNING;
-    private final AtomicInteger idleCount = new AtomicInteger(0);
-
-    public enum State {RUNNING, PAUSED, SHUTTING_DOWN, STOPPED}
-
+    private static final Map<String, Consumer<String>> consumerMap = new ConcurrentHashMap<>();
+    private static final int BASE_IDLE_MS = 500;
+    // 最大休眠上限 (毫秒)，例如 10 秒扫一次
+    private static final int MAX_IDLE_MS = 10000;
     private static String workerId;
+    private final AtomicInteger idleCount = new AtomicInteger(0);
     private final ExecutorService executor = new ThreadPoolExecutor(
             2, 4, 60L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(100),
             new ThreadPoolExecutor.CallerRunsPolicy() // 满负荷时，调度线程亲自下场干活，天然限流
     );
     private final JdbcTemplate jdbcTemplate;
-    private static final Map<String, Consumer<String>> consumerMap = new ConcurrentHashMap<>();
+    // 状态定义
+    private volatile State currentState = State.RUNNING;
+
+    // ================= 状态控制 API =================
+    // 记录下一次允许执行的时间戳
+    private volatile long nextExecutionTime = 0;
 
     public MQMocker(JdbcTemplate jdbcTemplate) throws UnknownHostException {
         workerId = InetAddress.getLocalHost().getHostAddress() + "-" + ThreadLocalRandom.current().nextInt(1000);
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // ================= 状态控制 API =================
+    public static void registerConsumer(String topic, Consumer<String> processor) {
+        consumerMap.put(topic, processor);
+        log.info("Topic [{}] 注册成功", topic);
+    }
 
     public State getCurrentState() {
         return currentState;
@@ -70,6 +76,8 @@ public class MQMocker {
             log.info("MQMocker 已【恢复】运行。");
         }
     }
+
+    // ================= 核心调度逻辑 =================
 
     /**
      * 重启：回收当前资源并重置状态
@@ -120,14 +128,6 @@ public class MQMocker {
 
         this.currentState = State.STOPPED;
     }
-
-    // ================= 核心调度逻辑 =================
-
-    private static final int BASE_IDLE_MS = 500;
-    // 最大休眠上限 (毫秒)，例如 10 秒扫一次
-    private static final int MAX_IDLE_MS = 10000;
-    // 记录下一次允许执行的时间戳
-    private volatile long nextExecutionTime = 0;
 
     @Scheduled(fixedDelay = 500) // 基础检查频率改为 0.5s
     public void autoDispatch() {
@@ -202,11 +202,6 @@ public class MQMocker {
     }
 
     // ================= 工具方法 =================
-
-    public static void registerConsumer(String topic, Consumer<String> processor) {
-        consumerMap.put(topic, processor);
-        log.info("Topic [{}] 注册成功", topic);
-    }
 
     public void send(String topic, String payload) {
         String sql = "INSERT INTO sys_mq_task (topic, payload, status, retry_count, max_retry, version, execute_time, create_time) " +
@@ -295,4 +290,6 @@ public class MQMocker {
             log.warn("【手动触发】失败：Topic [{}] 当前没有符合条件的待处理任务", topic);
         }
     }
+
+    public enum State {RUNNING, PAUSED, SHUTTING_DOWN, STOPPED}
 }

@@ -8,12 +8,13 @@ import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
 import com.arc.nas.repository.mysql.dao.system.MediaClientViewLogDAO;
 import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
+import com.arc.util.file.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MediaFeedService {
@@ -35,12 +36,39 @@ public class MediaFeedService {
         this.mediaClientViewLogDAO = mediaClientViewLogDAO;
     }
 
+    public static List<SysFile> filter(List<SysFile> contents, Set<String> types) {
+        if (contents == null || contents.isEmpty() || types == null || types.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> lowerTypes = types.stream()
+                .filter(Objects::nonNull)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        List<SysFile> filtered = new ArrayList<>(contents.size());
+        for (SysFile sysFile : contents) {
+            if (sysFile == null) continue;
+
+            String ext = FileUtil.getExtensionName(sysFile.getOriginalName());
+            if (ext != null && lowerTypes.contains(ext.toLowerCase())) {
+                filtered.add(sysFile);
+            }
+        }
+        return filtered;
+    }
+
+    public static Set<String> getWebSupportVideo() {
+        Set<String> webSupportVideo = new HashSet<String>();
+        webSupportVideo.add("mp4");
+        return webSupportVideo;
+    }
+
     public MediaFeedDTO feed(FeedQuery query) {
         // 获取数据源
         SysFileQuery sysFileQuery = new SysFileQuery();
         sysFileQuery.setMediaTypes(Set.of(query.getContentType()));
         List<SysFile> sysFiles = fileService.listAllByQuery(sysFileQuery);
-
+        sysFiles = filter(sysFiles, getWebSupportVideo());
         // mock 推荐算法
 
 //        if(mediaClientViewLogDAO)

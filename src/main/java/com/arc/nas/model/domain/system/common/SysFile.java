@@ -1,12 +1,10 @@
 package com.arc.nas.model.domain.system.common;
 
-import com.arc.nas.model.constants.NormalConstants;
 import com.arc.util.CodeUtil;
 import com.arc.util.file.FileUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+
+import static com.arc.nas.model.constants.file.StorageType.LOCAL;
 
 
 /**
@@ -65,137 +65,57 @@ public class SysFile implements Serializable {
 
     }
 
-
-    public SysFile(Long id) {
-        this.id = id;
-    }
-
-    public SysFile(String path, String code) {
-        this.path = path;
-        this.code = code;
-    }
-
-    /**
-     * 构建可入库的数据
-     *
-     * @param file       MultipartFile
-     * @param toDiskPath toDiskPath
-     */
-    public SysFile(MultipartFile file, String toDiskPath) {
-
-        //全名
-        String originalFilename = String.valueOf(file.getOriginalFilename());
-
-        this.originalName = originalFilename;
-        this.setRemark("MultipartFile");
-        this.length = file.getSize();
-        this.path = toDiskPath;
-//        int index = toDiskPath.lastIndexOf(File.separator);
-//        this.setCode(toDiskPath.substring(index + 1, index + 45 + 1));
-        Date now = new Date();
-        this.createTime = now;
-        this.updateTime = now;
-        this.status = NormalConstants.STATUS_NOT_DELETE;
-        this.version = NormalConstants.VERSION_INIT1;
-
-    }
-
-    public SysFile(Date createTime, Date updateTime, String code, String hash, String originalName, String displayName, String mediaType, String storageType, String path, Long length, Integer version, Integer status, Integer referenceCount, String remark, String taskStatus) {
-        this.createTime = createTime;
-        this.updateTime = updateTime;
-        this.code = code;
-        this.hash = hash;
-        this.originalName = originalName;
-        this.displayName = displayName;
-        this.mediaType = mediaType;
-        this.storageType = storageType;
-        this.path = path;
-        this.length = length;
-        this.version = version;
-        this.status = status;
-        this.referenceCount = referenceCount;
-        this.remark = remark;
-        this.taskStatus = taskStatus;
-    }
-
-    public SysFile(String code, String hash, String originalName, String displayName, String mediaType, String storageType, String path, Long length, Integer version, Integer status, Integer referenceCount, String remark, String taskStatus) {
-        this.code = code;
-        this.hash = hash;
-        this.originalName = originalName;
-        this.displayName = displayName;
-        this.mediaType = mediaType;
-        this.storageType = storageType;
-        this.path = path;
-        this.length = length;
-        this.version = version;
-        this.status = status;
-        this.referenceCount = referenceCount;
-        this.remark = remark;
-        this.taskStatus = taskStatus;
-    }
-
-    @Deprecated
-    public SysFile(String code, String displayName, String mediaType, String remark, String originalName, Long length, String path, Integer version, Integer status) {
-        Date now = new Date();
-        this.createTime = now;
-        this.updateTime = now;
-        this.code = code;
-        this.displayName = displayName;
-        this.mediaType = mediaType;
-        this.remark = remark;
-        this.originalName = originalName;
-        this.length = length;
-        this.path = path;
-        this.status = status == null ? NormalConstants.STATUS_NOT_DELETE : status;
-        this.version = version == null ? NormalConstants.VERSION_INIT1 : version;
-
-    }
-
-
     public static SysFile createSysFileSimple(File file, String taskStatus) {
-        String mediaType = FileUtil.getFileType(file.getName()); // VIDEO / AUDIO / IMAGE / FILE
         String remark = "";
-
-        Path path = file.toPath();
-        BasicFileAttributes attr = null;
-        if (Files.exists(path)) {
-            try {
-                attr = Files.readAttributes(path, BasicFileAttributes.class);
-            } catch (IOException e) {
+        SysFile sysFile = new SysFile();
+        if (file != null) {
+            Path path = file.toPath();
+            BasicFileAttributes attr = null;
+            if (Files.exists(path)) {
+                try {
+                    attr = Files.readAttributes(path, BasicFileAttributes.class);
+                } catch (IOException e) {
+                    taskStatus = "ERROR";
+                    remark = "Files.readAttributes error";
+                }
+                final String originalName = file.getName();
+                sysFile.setPath(file.getAbsolutePath());
+                sysFile.setOriginalName(originalName);
+                sysFile.setMediaType(FileUtil.getFileType(originalName));
+                sysFile.setDisplayName(FileUtil.getFilenameWithoutExtension(originalName));
+                sysFile.setLength(file.length());
+                if (attr != null) {
+                    Long createTime = attr.creationTime().toMillis();
+                    Long modifiedTime = attr.lastModifiedTime().toMillis();
+                    sysFile.setCreateTime(new Date(createTime));
+                    sysFile.setUpdateTime(new Date(modifiedTime));
+                }
+            } else {
                 taskStatus = "ERROR";
-                remark = "Files.readAttributes error";
+                remark = "File not exists";
             }
         } else {
             taskStatus = "ERROR";
-            remark = "File not exists";
+            remark = "File is null";
         }
 
-        long length = file.length();
+        sysFile.setStorageType(LOCAL);//"LOCAL"
+        sysFile.setVersion(1);
+        sysFile.setStatus(1);// 1=正常
+        sysFile.setReferenceCount(0);
+        sysFile.setHash("");// skip计算 SHA-256
+        sysFile.setCode(CodeUtil.createCode16());
+        sysFile.setRemark(remark);
+        sysFile.setTaskStatus(taskStatus);
+        return sysFile;
+    }
 
-        Long createTime = null;
-        Long modifiedTime = null;
-        if (attr != null) {
-            createTime = attr.creationTime().toMillis();
-            modifiedTime = attr.lastModifiedTime().toMillis();
+    public String getMediaType() {
+        return mediaType;
+    }
 
-        }
-        String originalName = file.getName();
-        String displayName = FileUtil.getFilenameWithoutExtension(originalName);
-        String storageType = "LOCAL";                    // 默认本地存储
-
-
-        // 默认初始化字段
-        String hash = "";          // skip计算 SHA-256
-        String code = CodeUtil.createCode16();// skip
-        Integer version = 1;
-        Integer status = 1;                               // 1=正常
-        Integer referenceCount = 0;
-
-        if (createTime == null) {
-            return new SysFile(code, hash, originalName, displayName, mediaType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
-        } else {
-            return new SysFile(new Date(createTime), new Date(modifiedTime), code, hash, originalName, displayName, mediaType, storageType, path.toString(), length, version, status, referenceCount, remark, taskStatus);
-        }
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     }
 
     public Long getId() {
@@ -238,28 +158,12 @@ public class SysFile implements Serializable {
         this.hash = hash;
     }
 
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    public void setOriginalName(String originalName) {
-        this.originalName = originalName;
-    }
-
     public String getDisplayName() {
         return displayName;
     }
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getMediaType() {
-        return mediaType;
-    }
-
-    public void setMediaType(String mediaType) {
-        this.mediaType = mediaType;
     }
 
     public String getStorageType() {
@@ -294,14 +198,6 @@ public class SysFile implements Serializable {
         this.version = version;
     }
 
-    public Integer getStatus() {
-        return status;
-    }
-
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
-
     public Integer getReferenceCount() {
         return referenceCount;
     }
@@ -318,12 +214,28 @@ public class SysFile implements Serializable {
         this.remark = remark;
     }
 
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
     public String getTaskStatus() {
         return taskStatus;
     }
 
     public void setTaskStatus(String taskStatus) {
         this.taskStatus = taskStatus;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
     }
 
     public String getMaturityLevel() {
@@ -342,14 +254,6 @@ public class SysFile implements Serializable {
         this.duration = duration;
     }
 
-    public String getThumbnail() {
-        return thumbnail;
-    }
-
-    public void setThumbnail(String thumbnail) {
-        this.thumbnail = thumbnail;
-    }
-
     public Integer getTagCount() {
         return tagCount;
     }
@@ -364,6 +268,14 @@ public class SysFile implements Serializable {
 
     public void setOnMount(Integer onMount) {
         this.onMount = onMount;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
     }
 }
 

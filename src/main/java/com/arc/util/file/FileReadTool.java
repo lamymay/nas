@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -154,6 +155,9 @@ public class FileReadTool {
             try {
                 String contents = readLinesAsString(filePath, StandardCharsets.ISO_8859_1, false);
                 File file = new File(filePath.toFile().getAbsolutePath());
+//                FileUtil.deleteFile(file, true);
+//                FileUtil.requireFileDirectoryExistsOrElseTryCreate(file);
+//                FileUtil.writeToDisk(contents, file.getAbsolutePath(), true);
                 iso8859_1_files.add(filePath);
                 return contents;
             } catch (IOException e) {
@@ -161,6 +165,102 @@ public class FileReadTool {
                 throw new RuntimeException(e);
             }
         }
+
+    }
+
+
+    public static TreeSet<String> readLines(File source) {
+        BufferedReader reader = null;
+        String temp = null;
+        TreeSet<String> lines = new TreeSet<>();
+        int line = 1;
+        try {
+            reader = new BufferedReader(new FileReader(source));
+            while ((temp = reader.readLine()) != null) {
+                lines.add(temp);
+                line++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return lines;
+    }
+
+
+    ///
+
+    private static void testReadFunV2() {
+
+//        List<File> files = FileUtil.listFileByFolder("E:\\syncd");
+        List<File> files = FileUtil.listFileByFolder("E:\\syncd\\encoding");
+
+        for (File file : files) {
+            if (FileUtil.isTxt(file)) {
+                System.out.println(convert_file_ISO8859_1_to_UTF8(file.toPath()));
+            }
+        }
+
+        iso8859_1_files.stream().forEach(System.out::println);
+//        String content1 = readLinesAsString(new File("E:\\syncd\\HR\\__all\\春.txt").toPath(), false);
+//        String content2 = readLinesAsString(new File("E:\\syncd\\HR\\__all\\大学英语精读答案.txt").toPath(), false);
+//        String content3 = readLinesAsString(new File("E:\\syncd\\HR\\__all\\ng.txt").toPath(), false);
+//
+//        System.out.println(content1);
+//        System.out.println(content2);
+//        System.out.println(content3);
+
+    }
+
+    private static void testReadFun() {
+        File sourceFile = new File("H:\\code\\java\\fx\\doc\\simple\\A\\测试JS.js");
+        String content1 = readLinesAsStringV1(sourceFile, false);
+        String content2 = readLinesAsString(sourceFile.toPath(), false);
+        System.out.println("------readLinesAsStringV1 ------");
+        System.out.println(content1);
+        System.out.println("------ readLinesAsString ------");
+        System.out.println(content2);
+        System.out.println("------ equals? ------");
+        System.out.println(content1.equals(content2));
+
+        System.out.println(content1.length());
+        System.out.println(content2.length());
+
+    }
+
+
+    public static void main(String[] args) {
+        // 示例用法
+        //testReadFun();
+        TreeSet<String> lines = FileUtil.readLines(new File("/Users/may/Desktop/code/java/1/zero/log/2.txt"));
+        TreeSet<String> rows = new TreeSet<>();
+        for (String item : lines) {
+            if (item.startsWith("#")) continue;
+            if (item.endsWith("/")) {
+                item = item.substring(0, item.length() - 1);
+            }
+            rows.add(item);
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println();
+        System.out.println();
+
+        for (String item : rows) {
+            System.out.println(item);
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println(lines.size() + " / " + rows.size());
 
     }
 

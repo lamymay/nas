@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS sys_file (
     original_name VARCHAR(1024) NOT NULL, -- 文件真实名称
     display_name VARCHAR(1024),           -- 显示名称，可为空默认=original_name
     media_type VARCHAR(32),               -- VIDEO / AUDIO / IMAGE / FILE / THUMBNAIL
-    mime_type VARCHAR(128),               -- MIME 类型，如 video/mp4
 
     storage_type VARCHAR(16),             -- LOCAL / OSS / NAS
     path VARCHAR(2048) NOT NULL,          -- 存储路径（本地绝对路径或 OSS的路径）

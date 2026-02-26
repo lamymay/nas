@@ -46,6 +46,7 @@ public class MQMockerRestController {
         mqMocker.resume();
         return "SUCCESS";
     }
+
     /**
      * 手动塞入并立即触发消费
      */

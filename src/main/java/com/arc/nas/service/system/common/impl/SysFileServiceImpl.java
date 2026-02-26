@@ -400,17 +400,15 @@ public class SysFileServiceImpl implements SysFileService {
      * @param toDiskPath toDiskPath
      * @return SysFile
      */
+    @Deprecated
     private SysFile createSysFile(MultipartFile file, File toDiskPath) {
         //全名
         String originalName = file.getOriginalFilename();
-        String displayName = FileUtil.getFilenameWithoutExtension(originalName);
-        String type = FileUtil.getFileType(FileUtil.getExtension(originalName));
-        String sha256 = FileSameCheckTool.calculateHashSHA256(new File(toDiskPath.getPath()));
         SysFile sysFile = new SysFile();
         sysFile.setOriginalName(originalName);
-        sysFile.setHash(sha256);
-        sysFile.setDisplayName(displayName);
-        sysFile.setMediaType(type);
+        sysFile.setDisplayName(FileUtil.getFilenameWithoutExtension(originalName));
+        sysFile.setMediaType(FileUtil.getFileType(FileUtil.getExtension(originalName)));
+        sysFile.setHash(FileSameCheckTool.calculateHashSHA256(new File(toDiskPath.getPath())));
         sysFile.setLength(file.getSize());
         sysFile.setPath(toDiskPath.getPath());
         sysFile.setRemark("");

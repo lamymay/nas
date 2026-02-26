@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
@@ -421,7 +423,7 @@ public class MediaResourceImpl implements MediaResource {
             ));
 
             int deleteCount = 0;
-            List<File> files = FileUtil.listFileByDir(thumbnailRootFile);
+            List<File> files = FileUtil.listFileByFolder(thumbnailRootFile);
             for (File file : files) {
                 String filename = file.getName();
                 if (thumbnailMap.get(file.getAbsolutePath()) == null
@@ -458,11 +460,11 @@ public class MediaResourceImpl implements MediaResource {
         ignoreFile.add(ignore);
         ignoreFile.addAll(Platform.SYSTEM_DEFAULT_FILENAMES);
         for (String folder : folders) {
-            List<File> tmp = FileUtil.listFileByDir(folder, ignoreFile);
+            List<File> tmp = FileUtil.listFileByFolder(new File(folder), null, ignoreFile);
             if (tmp != null) allDiskFiles.addAll(tmp);
         }
         String thumbnailRootFolder = cleanPath(getThumbnailRoot().getAbsolutePath());
-        List<File> tmpThumbnail = FileUtil.listFileByDir(thumbnailRootFolder, ignoreFile);
+        List<File> tmpThumbnail = FileUtil.listFileByFolder(new File(thumbnailRootFolder), null, ignoreFile);
         if (tmpThumbnail != null) allDiskFiles.addAll(tmpThumbnail);
         // 将磁盘文件转为 Map，Key 为绝对路径，方便快速比对
         Map<String, File> diskPathMap = allDiskFiles.stream()
@@ -534,6 +536,12 @@ public class MediaResourceImpl implements MediaResource {
 
         for (SysFile sysFile : index) {
             if (sysFile == null) continue;
+            Path diskPath = Path.of(sysFile.getPath());
+            if (!Files.exists(diskPath) || !Files.isRegularFile(diskPath)) {
+                log.warn("file={} 不是合法文件", sysFile.getPath());
+                continue;
+            }
+
             String path = null;
             if (StringTool.isBlank(sysFile.getHash())) {
                 path = sysFile.getPath();
