@@ -27,6 +27,10 @@ https://172.20.10.5:9000/nas/media/cms
 
 ![how to config media folder](./data/images/how_to_config_media_folder.png)
 
+![view image](./data/images/view-image.png)
+
+![play video](./data/images/play-video.png)
+
 ### 图片浏览页
 
 https://172.20.10.5:9000/nas/media/image
