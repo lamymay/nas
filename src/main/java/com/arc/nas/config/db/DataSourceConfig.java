@@ -40,11 +40,10 @@ public class DataSourceConfig {
                         "\n配置Hikari数据源1:" +
                         "\ndatasourceJdbcUrl1={}" +
                         "\ndatasourceUsername1={}" +
-                        "\ndatasourcePassword1={}" +
                         "\ndatasourceDriverClassName1={}" +
                         "\n##########################################################################################",
                 hikariConfig.getJdbcUrl(), hikariConfig.getUsername(),
-                datasourcePassword1, hikariConfig.getDriverClassName());
+                 hikariConfig.getDriverClassName());
         DataSource hikariDataSource = new HikariDataSource(hikariConfig);
         log.info("数据源1 DataSource={}", hikariDataSource);
         return hikariDataSource;

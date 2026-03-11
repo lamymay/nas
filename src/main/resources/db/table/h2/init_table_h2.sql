@@ -1,9 +1,9 @@
 --drop table  IF  EXISTS sys_key_value;
 --drop table  IF  EXISTS sys_file;
---drop table  IF  EXISTS media_tag;
---drop table  IF  EXISTS media_file_tag_relation;
---drop table  IF  EXISTS media_resource_config;
---drop table  IF  EXISTS media_client_view_log;
+--drop table  IF  EXISTS file_tag;
+--drop table  IF  EXISTS file_tag_relation;
+--drop table  IF  EXISTS resource_config;
+--drop table  IF  EXISTS file_client_view_log;
 --drop table  IF  EXISTS sys_mq_task;
 
 
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS sys_file (
 
 
 --- 系统媒体库目录配置表
-CREATE TABLE IF NOT EXISTS media_resource_config (
+CREATE TABLE IF NOT EXISTS resource_config (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 注意 H2 2.x 的语法
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS media_resource_config (
 );
 
 
-CREATE TABLE IF NOT EXISTS media_tag(
+CREATE TABLE IF NOT EXISTS file_tag(
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 创建时间
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 更新时间
@@ -74,14 +74,14 @@ CREATE TABLE IF NOT EXISTS media_tag(
     avatar VARCHAR(1024)        -- 多个缩略图，用英文逗号分割
 );
 
-CREATE TABLE IF NOT EXISTS media_file_tag_relation (
+CREATE TABLE IF NOT EXISTS file_tag_relation (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     file_id BIGINT NOT NULL,
     tag_id BIGINT NOT NULL
 );
 
 ---  观看流水表 (核心：去重逻辑来源)
-CREATE TABLE IF NOT EXISTS media_client_view_log (
+CREATE TABLE IF NOT EXISTS file_client_view_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     play_at BIGINT NOT NULL DEFAULT 0,
     client_code VARCHAR(255) NOT NULL,

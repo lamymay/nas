@@ -1,6 +1,6 @@
 package com.arc.nas.timer;
 
-import com.arc.nas.model.domain.app.media.MediaFileResource;
+import com.arc.nas.model.domain.system.common.ResourceConfig;
 import com.arc.nas.model.request.app.media.GenerateThumbnailConfig;
 import com.arc.nas.model.request.app.media.GenerateThumbnailResult;
 import com.arc.nas.service.app.media.MediaResource;
@@ -64,11 +64,11 @@ public class ScheduleTask {
     }
 
     private Set<String> prepareMonitorFolders() {
-        List<MediaFileResource> mediaFileResources = mediaResource.listAll();
+        List<ResourceConfig> resourceConfigs = mediaResource.listAll();
         Set<String> folders = new HashSet<>();
-        for (MediaFileResource mediaFileResource : mediaFileResources) {
-            if (mediaFileResource != null && mediaFileResource.getPath() != null) {
-                folders.add(mediaFileResource.getPath());
+        for (ResourceConfig resourceConfig : resourceConfigs) {
+            if (resourceConfig != null && resourceConfig.getPath() != null) {
+                folders.add(resourceConfig.getPath());
             }
         }
         return folders;

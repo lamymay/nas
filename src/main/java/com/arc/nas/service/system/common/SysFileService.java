@@ -6,7 +6,7 @@ import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
 import com.arc.nas.model.request.app.media.SysFilePageable;
 import com.arc.nas.model.request.app.media.SysFileQuery;
-import org.springframework.data.domain.Page;
+import com.arc.nas.model.response.ArcPage;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -73,7 +73,7 @@ public interface SysFileService {
      * @param pageable pageable
      * @return Page
      */
-    Page<SysFile> listPage(SysFilePageable pageable);
+    ArcPage<SysFile> listPage(SysFilePageable pageable);
 
     MediaItemDTO getMediaItemDTOByIdOrCode(String code);
 

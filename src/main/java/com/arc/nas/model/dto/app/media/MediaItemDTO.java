@@ -1,7 +1,7 @@
 package com.arc.nas.model.dto.app.media;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.arc.nas.model.domain.system.common.SysFile;
+import org.springframework.beans.BeanUtils;
 
 import java.util.*;
 
@@ -21,7 +21,7 @@ public class MediaItemDTO {
     public static List<MediaItemDTO> covertSysFileToMediaItemDTO(List<SysFile> contents, String urlPrefix) {
         return contents.stream().map(sysFile -> {
             MediaItemDTO dto = new MediaItemDTO();
-            BeanUtil.copyProperties(sysFile, dto);
+            BeanUtils.copyProperties(sysFile, dto);
             // 构建访问 URL
             String itemUrl = buildFileUrl(urlPrefix, sysFile.getCode());
             Map<String, List<MediaSegmentDTO>> segmentMap = new HashMap<String, List<MediaSegmentDTO>>();

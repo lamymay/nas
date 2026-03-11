@@ -1,10 +1,9 @@
 package com.arc.nas.model.request.app.media;
 
 import com.arc.nas.model.constants.NormalConstants;
-import com.arc.nas.model.request.ArcPageable;
 
 
-public class SysFilePageable extends ArcPageable {
+public class SysFilePageable {
 
     private int pageNumber = NormalConstants.PAGE_NUMBER_FIRST;
 
@@ -38,7 +37,6 @@ public class SysFilePageable extends ArcPageable {
     }
 
 
-    @Override
     public int getPageNumber() {
         return pageNumber;
     }
@@ -47,7 +45,6 @@ public class SysFilePageable extends ArcPageable {
         this.pageNumber = pageNumber;
     }
 
-    @Override
     public int getPageSize() {
         return pageSize;
     }
@@ -88,7 +85,6 @@ public class SysFilePageable extends ArcPageable {
         this.orderDirection = orderDirection;
     }
 
-    @Override
     public long getOffset() {
         return offset;
     }

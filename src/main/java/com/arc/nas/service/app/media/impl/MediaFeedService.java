@@ -4,9 +4,9 @@ import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.dto.app.media.MediaFeedDTO;
 import com.arc.nas.model.request.app.media.FeedQuery;
 import com.arc.nas.model.request.app.media.SysFileQuery;
-import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
-import com.arc.nas.repository.mysql.dao.system.MediaClientViewLogDAO;
-import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
+import com.arc.nas.repository.dao.system.FileTagRelationDAO;
+import com.arc.nas.repository.dao.system.ClientViewLogDAO;
+import com.arc.nas.repository.dao.system.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.file.FileUtil;
 import org.slf4j.Logger;
@@ -23,17 +23,17 @@ public class MediaFeedService {
     private final SysFileService fileService;
     private final SysFileDAO sysFileDAO;
     private final FileTagRelationDAO fileTagRelationDAO;
-    private final MediaClientViewLogDAO mediaClientViewLogDAO;
+    private final ClientViewLogDAO clientViewLogDAO;
     private final UrlHelper urlHelper;
 
     public MediaFeedService(SysFileService fileService, SysFileDAO sysFileDAO, FileTagRelationDAO fileTagRelationDAO,
                             UrlHelper urlHelper,
-                            MediaClientViewLogDAO mediaClientViewLogDAO) {
+                            ClientViewLogDAO clientViewLogDAO) {
         this.fileService = fileService;
         this.sysFileDAO = sysFileDAO;
         this.fileTagRelationDAO = fileTagRelationDAO;
         this.urlHelper = urlHelper;
-        this.mediaClientViewLogDAO = mediaClientViewLogDAO;
+        this.clientViewLogDAO = clientViewLogDAO;
     }
 
     public static List<SysFile> filter(List<SysFile> contents, Set<String> types) {

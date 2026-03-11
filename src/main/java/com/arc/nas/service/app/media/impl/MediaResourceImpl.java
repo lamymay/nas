@@ -1,13 +1,13 @@
 package com.arc.nas.service.app.media.impl;
 
-import com.arc.nas.model.domain.app.media.FileTagRelation;
-import com.arc.nas.model.domain.app.media.MediaFileResource;
+import com.arc.nas.model.domain.system.common.FileTagRelation;
+import com.arc.nas.model.domain.system.common.ResourceConfig;
 import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.request.app.media.*;
-import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
-import com.arc.nas.repository.mysql.dao.app.MediaFileResourceDAO;
-import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
+import com.arc.nas.repository.dao.system.FileTagRelationDAO;
+import com.arc.nas.repository.dao.system.FileResourceDAO;
+import com.arc.nas.repository.dao.system.SysFileDAO;
 import com.arc.nas.service.app.media.MediaResource;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.Assert;
@@ -49,17 +49,17 @@ public class MediaResourceImpl implements MediaResource {
     final static String userHome = System.getProperty("user.home");
     private static final Logger log = LoggerFactory.getLogger(MediaResourceImpl.class);
     private final SysFileService fileService;
-    private final MediaFileResourceDAO mediaFileResourceDAO;
+    private final FileResourceDAO fileResourceDAO;
     private final SysFileDAO sysFileDAO;
     private final FileTagRelationDAO fileTagRelationDAO;
 
     public MediaResourceImpl(SysFileService fileService,
-                             MediaFileResourceDAO mediaFileResourceDAO,
+                             FileResourceDAO fileResourceDAO,
                              SysFileDAO sysFileDAO,
                              FileTagRelationDAO fileTagRelationDAO
     ) {
         this.fileService = fileService;
-        this.mediaFileResourceDAO = mediaFileResourceDAO;
+        this.fileResourceDAO = fileResourceDAO;
         this.sysFileDAO = sysFileDAO;
         this.fileTagRelationDAO = fileTagRelationDAO;
 
@@ -72,43 +72,43 @@ public class MediaResourceImpl implements MediaResource {
 
     ///
     @Override
-    public List<MediaFileResource> listAll() {
-        List<MediaFileResource> folders = mediaFileResourceDAO.listAll();
+    public List<ResourceConfig> listAll() {
+        List<ResourceConfig> folders = fileResourceDAO.listAll();
         return folders == null ? new ArrayList<>() : folders;
     }
 
     @Override
-    public List<MediaFileResource> saveAll(String... needInsertRows) {
+    public List<ResourceConfig> saveAll(String... needInsertRows) {
         if (needInsertRows == null || needInsertRows.length == 0) return Collections.emptyList();
 
-        List<MediaFileResource> existRows = listAll();
+        List<ResourceConfig> existRows = listAll();
         Set<String> existKeys = (existRows == null) ? Collections.emptySet() :
-                existRows.stream().map(MediaFileResource::getPath).collect(Collectors.toSet());
+                existRows.stream().map(ResourceConfig::getPath).collect(Collectors.toSet());
 
-        List<MediaFileResource> collect = new ArrayList<>();
+        List<ResourceConfig> collect = new ArrayList<>();
         for (String insertPath : needInsertRows) {
             if (insertPath == null) continue;
             if (existKeys.contains(insertPath)) continue;
-            collect.add(new MediaFileResource(insertPath, new Date()));
+            collect.add(new ResourceConfig(insertPath, new Date()));
 
         }
         if (collect.isEmpty()) {
             return Collections.emptyList();
         }
-        List<MediaFileResource> mediaFileResources = mediaFileResourceDAO.saveAll(collect);
-        return mediaFileResources;
+        List<ResourceConfig> resourceConfigs = fileResourceDAO.saveAll(collect);
+        return resourceConfigs;
     }
 
     @Override
     public int deleteAll() {
-        return mediaFileResourceDAO.deleteAll();
+        return fileResourceDAO.deleteAll();
     }
 
     @Override
     public int deleteAll(String... records) {
         if (records == null || records.length == 0) return 0;
         // 直接转为 List，一步到位
-        return mediaFileResourceDAO.deleteByPaths(Arrays.asList(records));
+        return fileResourceDAO.deleteByPaths(Arrays.asList(records));
     }
 
     @Override

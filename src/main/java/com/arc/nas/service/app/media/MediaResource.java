@@ -1,6 +1,6 @@
 package com.arc.nas.service.app.media;
 
-import com.arc.nas.model.domain.app.media.MediaFileResource;
+import com.arc.nas.model.domain.system.common.ResourceConfig;
 import com.arc.nas.model.request.app.media.*;
 
 import java.util.List;
@@ -10,9 +10,9 @@ import java.util.List;
  */
 public interface MediaResource {
 
-    List<MediaFileResource> listAll();
+    List<ResourceConfig> listAll();
 
-    List<MediaFileResource> saveAll(String... records);
+    List<ResourceConfig> saveAll(String... records);
 
     int deleteAll();
 

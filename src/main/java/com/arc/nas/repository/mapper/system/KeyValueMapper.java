@@ -1,0 +1,23 @@
+package com.arc.nas.repository.mapper.system;
+
+import com.arc.nas.model.domain.system.common.KeyValue;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+
+public interface KeyValueMapper extends BaseMapper<KeyValue> {
+
+//    int save(KeyValue keyValue);
+//
+//    KeyValue get(Long id);
+//
+//    int deleteByRequest(Map<String, String> map);
+//
+//    List<KeyValue> listAll();
+//
+//    KeyValue getById(@Param("id") Long id);
+//
+//
+//    Long count(KeyValueRequest query);
+//
+//    List<KeyValue> listPage(KeyValueRequest query);
+}

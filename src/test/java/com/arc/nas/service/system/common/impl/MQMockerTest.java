@@ -1,5 +1,6 @@
 package com.arc.nas.service.system.common.impl;
 
+import com.arc.nas.service.mock.MQMocker;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

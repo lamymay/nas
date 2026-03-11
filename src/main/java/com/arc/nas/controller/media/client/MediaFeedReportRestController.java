@@ -1,7 +1,7 @@
 package com.arc.nas.controller.media.client;
 
-import com.arc.nas.model.domain.app.media.MediaClientViewLog;
-import com.arc.nas.repository.mysql.dao.system.MediaClientViewLogDAO;
+import com.arc.nas.model.domain.system.common.ClientViewLog;
+import com.arc.nas.repository.dao.system.ClientViewLogDAO;
 import com.arc.nas.service.app.media.impl.MediaFeedService;
 import com.arc.nas.service.app.media.impl.UrlHelper;
 import com.arc.nas.service.system.common.SysFileService;
@@ -26,27 +26,27 @@ public class MediaFeedReportRestController {
     private final MediaFeedService mediaFeedService;
     private final SysFileService sysFileService;
     private final UrlHelper urlHelper;
-    private final MediaClientViewLogDAO mediaClientViewLogDAO;
+    private final ClientViewLogDAO clientViewLogDAO;
 
     public MediaFeedReportRestController(MediaFeedService mediaFeedService, SysFileService sysFileService,
                                          UrlHelper urlHelper,
-                                         MediaClientViewLogDAO mediaClientViewLogDAO
+                                         ClientViewLogDAO clientViewLogDAO
     ) {
         this.mediaFeedService = mediaFeedService;
         this.sysFileService = sysFileService;
         this.urlHelper = urlHelper;
-        this.mediaClientViewLogDAO = mediaClientViewLogDAO;
+        this.clientViewLogDAO = clientViewLogDAO;
     }
 
     @PostMapping("/report")
-    public ResponseEntity<MediaClientViewLog> report(@RequestBody MediaClientViewLog viewLog) {
+    public ResponseEntity<ClientViewLog> report(@RequestBody ClientViewLog viewLog) {
         // todo 后续异步处理逻辑，比如 给推送系统计算权重
         if (viewLog.getClientCode() == null) {
             return ResponseEntity.badRequest().build();
         }
         try {
             log.info("report viewLog={} ", JSON.toJSONString(viewLog));
-            return ResponseEntity.ok(mediaClientViewLogDAO.saveOrUpdateOne(viewLog));
+            return ResponseEntity.ok(clientViewLogDAO.saveOrUpdateOne(viewLog));
         } catch (Exception exception) {
             log.error("report", exception);
             return ResponseEntity.badRequest().build();

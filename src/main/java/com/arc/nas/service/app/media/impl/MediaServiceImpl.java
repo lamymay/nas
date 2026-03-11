@@ -4,13 +4,13 @@ import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.dto.app.media.MediaPageDTO;
 import com.arc.nas.model.request.app.media.SysFilePageable;
-import com.arc.nas.repository.mysql.dao.app.FileTagRelationDAO;
-import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
+import com.arc.nas.model.response.ArcPage;
+import com.arc.nas.repository.dao.system.FileTagRelationDAO;
+import com.arc.nas.repository.dao.system.SysFileDAO;
 import com.arc.nas.service.app.media.MediaService;
 import com.arc.nas.service.system.common.SysFileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,17 +44,18 @@ public class MediaServiceImpl implements MediaService {
         mediaPageDTO.setPageNumber(pageable.getPageNumber());
         mediaPageDTO.setPageSize(pageable.getPageSize());
 
-        Page<SysFile> page = fileService.listPage(pageable);
+        ArcPage<SysFile> page = fileService.listPage(pageable);
         if (VIDEO.equals(pageable.getMediaType())) {
-            List<SysFile> filter = filter(page.getContent(), getWebSupportVideo());
+//            List<SysFile> filter = filter(page.getContent(), getWebSupportVideo());
+            List<SysFile> filter = filter(page.getRecords(), getWebSupportVideo());
             List<MediaItemDTO> mediaItemDTOList = covertSysFileToMediaItemDTO(filter, urlHelper.getPrefix());
             mediaPageDTO.setContent(mediaItemDTOList);
             // todo 优化 filter后计数
-            mediaPageDTO.setTotalElements(page.getTotalElements());
+            mediaPageDTO.setTotalElements(page.getTotal());
             mediaPageDTO.setTotalPages(page.getTotalPages());
-        }else {
-            mediaPageDTO.setContent(covertSysFileToMediaItemDTO(page.getContent(), urlHelper.getPrefix()));
-            mediaPageDTO.setTotalElements(page.getTotalElements());
+        } else {
+            mediaPageDTO.setContent(covertSysFileToMediaItemDTO(page.getRecords(), urlHelper.getPrefix()));
+            mediaPageDTO.setTotalElements(page.getTotal());
             mediaPageDTO.setTotalPages(page.getTotalPages());
         }
 

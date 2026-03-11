@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.arc.nas.repository.mysql.mapper.system.SysFileMapper">
+<mapper namespace="com.arc.nas.repository.mapper.system.SysFileMapper">
 
     <!-- 查询文件，支持媒体类型过滤、标签过滤、仅未打标签 -->
     <select id="listFilesByMediaTypesAndTags"
@@ -23,7 +23,7 @@
         <if test="tagIds != null and tagIds.size() > 0">
             AND EXISTS (
             SELECT 1
-            FROM media_file_tag_relation r
+            FROM file_tag_relation r
             WHERE r.file_id = f.id
             AND r.tag_id IN
             <foreach collection="tagIds" item="tag" open="(" separator="," close=")">
@@ -36,7 +36,7 @@
         <if test="onlyUntagged == true">
             AND NOT EXISTS (
             SELECT 1
-            FROM media_file_tag_relation r
+            FROM file_tag_relation r
             WHERE r.file_id = f.id
             )
         </if>

@@ -1,6 +1,6 @@
 package com.arc.nas.controller.media.cms;
 
-import com.arc.nas.model.domain.app.media.MediaFileResource;
+import com.arc.nas.model.domain.system.common.ResourceConfig;
 import com.arc.nas.model.dto.app.media.ScanRequest;
 import com.arc.nas.service.app.media.MediaResource;
 import org.slf4j.Logger;
@@ -27,12 +27,12 @@ public class MediaResourceRestController {
     }
 
     @GetMapping("/listAll")
-    public ResponseEntity<List<MediaFileResource>> listAll() {
+    public ResponseEntity<List<ResourceConfig>> listAll() {
         return ResponseEntity.ok(mediaResource.listAll());
     }
 
     @PostMapping("/saves")
-    public ResponseEntity<List<MediaFileResource>> saveAll(@RequestBody ScanRequest req) {
+    public ResponseEntity<List<ResourceConfig>> saveAll(@RequestBody ScanRequest req) {
         String[] folders = req.getFolders();
         log.info("收到扫描请求, folders={}", String.join(",", folders));
         return ResponseEntity.ok(mediaResource.saveAll(folders));

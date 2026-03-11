@@ -1,13 +1,13 @@
 package com.arc.nas.service.system.common.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.arc.nas.model.domain.system.common.SysFile;
 import com.arc.nas.model.dto.app.media.MediaItemDTO;
 import com.arc.nas.model.request.app.media.BatchItemResult;
 import com.arc.nas.model.request.app.media.BatchResult;
 import com.arc.nas.model.request.app.media.SysFilePageable;
 import com.arc.nas.model.request.app.media.SysFileQuery;
-import com.arc.nas.repository.mysql.dao.system.SysFileDAO;
+import com.arc.nas.model.response.ArcPage;
+import com.arc.nas.repository.dao.system.SysFileDAO;
 import com.arc.nas.service.system.common.SysFileService;
 import com.arc.util.Assert;
 import com.arc.util.CodeUtil;
@@ -16,7 +16,7 @@ import com.arc.util.file.FileSameCheckTool;
 import com.arc.util.file.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -478,7 +478,7 @@ public class SysFileServiceImpl implements SysFileService {
 
         // 2. 创建 DTO
         MediaItemDTO dto = new MediaItemDTO();
-        BeanUtil.copyProperties(sysFile, dto);
+        BeanUtils.copyProperties(sysFile, dto);
         return dto;
     }
 
@@ -528,7 +528,7 @@ public class SysFileServiceImpl implements SysFileService {
     }
 
     @Override
-    public Page<SysFile> listPage(SysFilePageable pageable) {
+    public ArcPage<SysFile> listPage(SysFilePageable pageable) {
         return sysFileDAO.listPage(pageable);
     }
 
